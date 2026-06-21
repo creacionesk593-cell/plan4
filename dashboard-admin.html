@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="frame-ancestors 'none'">
+  <title>Consola de Administración</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --azul:       #2563eb;
+      --azul-hover: #1d4ed8;
+      --rojo:       #dc2626;
+      --verde:      #16a34a;
+      --gris-100:   #f3f4f6;
+      --gris-200:   #e5e7eb;
+      --gris-600:   #4b5563;
+      --gris-900:   #111827;
+      --radio:      12px;
+      --sombra:     0 4px 12px rgba(0,0,0,0.05);
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--gris-100); color: var(--gris-900); min-height: 100vh;
+    }
+    header {
+      background: #fff; padding: 16px 24px; display: flex;
+      justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .user-info h2 { font-size: 18px; font-weight: 700; }
+    .btn-logout {
+      background: none; border: 1.5px solid var(--gris-200); padding: 8px 14px;
+      border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .btn-logout:hover { background: var(--gris-100); }
+    
+    main { max-width: 1200px; margin: 32px auto; padding: 0 16px; }
+    
+    /* Métricas en Grid */
+    .grid-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .card-metric { background: #fff; padding: 20px; border-radius: var(--radio); box-shadow: var(--sombra); text-align: center; }
+    .card-metric h4 { font-size: 12px; text-transform: uppercase; color: var(--gris-600); margin-bottom: 6px; }
+    .card-metric .num { font-size: 24px; font-weight: 800; color: var(--azul); }
+
+    /* Tablas y Paneles */
+    .card-panel { background: #fff; padding: 24px; border-radius: var(--radio); box-shadow: var(--sombra); margin-bottom: 24px; }
+    .card-panel h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+    
+    .table-responsive { width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+    th { background: var(--gris-100); padding: 12px; font-weight: 600; color: var(--gris-600); }
+    td { padding: 12px; border-bottom: 1px solid var(--gris-200); }
+    
+    .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .badge.active { background: #f0fdf4; color: var(--verde); }
+    .badge.inactive { background: #fef2f2; color: var(--rojo); }
+
+    .btn-action { padding: 4px 8px; font-size: 12px; background: #fff; border: 1px solid var(--gris-200); border-radius: 4px; cursor: pointer; }
+    .btn-action:hover { background: var(--gris-100); }
+
+    #mensaje-error { display: none; padding: 12px; background: #fef2f2; color: var(--rojo); border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="user-info">
+      <h2 id="txt-nombre">Cargando...</h2>
+      <p>Consola Máster de Administración</p>
+    </div>
+    <button class="btn-logout" onclick="handleLogout()">Cerrar sesión</button>
+  </header>
+
+  <main>
+    <div id="mensaje-error"></div>
+
+    <div class="grid-metrics" id="metrics-container">
+      <div class="card-metric"><h4>Clientes Totales</h4><div class="num" id="m-c-tot">—</div></div>
+      <div class="card-metric"><h4>Clientes Activos</h4><div class="num" id="m-c-act">—</div></div>
+      <div class="card-metric"><h4>Vendedores</h4><div class="num" id="m-vended">—</div></div>
+      <div class="card-metric"><h4>Suscripciones Activas</h4><div class="num" id="m-sub-act">—</div></div>
+    </div>
+
+    <div class="card-panel">
+      <h3>Control de Usuarios de la Plataforma</h3>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Rol</th>
+              <th>Estado</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-usuarios">
+            <tr><td colspan="5">Cargando cuentas de usuario...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card-panel">
+      <h3>Bitácora de Auditoría del Sistema (Logs)</h3>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Operación</th>
+              <th>Realizado por</th>
+              <th>Detalle</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-logs">
+            <tr><td colspan="4">Cargando bitácora inmutable...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+<script type="module">
+  import { supabase, guardAcceso, logout, mostrarError } from './configuracion.js'
+
+  window.handleLogout = async function() { await logout() }
+
+  ;(async function init() {
+    const profile = await guardAcceso('administrador')
+    if (!profile) return
+    document.getElementById('txt-nombre').textContent = profile.nombre
+
+    await Promise.all([
+      cargarMetricasResumen(),
+      cargarUsuarios(),
+      cargarLogsAuditoria()
+    ])
+  })()
+
+  async function cargarMetricasResumen() {
+    try {
+      const { data, error } = await supabase.from('vista_dashboard_admin').select('*').single()
+      if (error) throw error
+
+      document.getElementById('m-c-tot').textContent   = data.total_clientes
+      document.getElementById('m-c-act').textContent   = data.clientes_activos
+      document.getElementById('m-vended').textContent  = data.total_vendedores
+      document.getElementById('m-sub-act').textContent = data.suscripciones_vigentes
+    } catch(e) {
+      console.error("Error cargando métricas", e)
+    }
+  }
+
+  async function cargarUsuarios() {
+    try {
+      const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false })
+      if (error) throw error
+
+      const tbody = document.getElementById('tbody-usuarios')
+      tbody.innerHTML = data.map(u => `
+        <tr>
+          <td><strong>${u.nombre}</strong></td>
+          <td>${u.email}</td>
+          <td><span class="badge" style="background:#eff6ff; color:var(--azul);">${u.rol}</span></td>
+          <td><span class="badge ${u.activo ? 'active' : 'inactive'}">${u.activo ? 'Activo' : 'Suspendido'}</span></td>
+          <td>
+            <button class="btn-action" onclick="conmutarEstado('${u.id}', ${u.activo})">
+              ${u.activo ? 'Suspender' : 'Activar'}
+            </button>
+          </td>
+        </tr>
+      `).join('')
+    } catch(e) {
+      mostrarError('No se pudo mapear la lista de usuarios globales.')
+    }
+  }
+
+  window.conmutarEstado = async function(id, estadoActual) {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ activo: !estadoActual })
+        .eq('id', id)
+      
+      if (error) throw error
+      await Promise.all([cargarMetricasResumen(), cargarUsuarios(), cargarLogsAuditoria()])
+    } catch(e) {
+      alert('Error modificando el estatus operacional del usuario.')
+    }
+  }
+
+  async function cargarLogsAuditoria() {
+    try {
+      const { data, error } = await supabase
+        .from('audit_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20)
+      
+      if (error) throw error
+
+      const tbody = document.getElementById('tbody-logs')
+      tbody.innerHTML = data.map(log => `
+        <tr>
+          <td style="white-space:nowrap; color:var(--gris-600);">${new Date(log.created_at).toLocaleString()}</td>
+          <td><strong>${log.accion}</strong></td>
+          <td>${log.ejecutado_por || 'Sistema / Automatización'}</td>
+          <td style="font-size:13px;">${JSON.stringify(log.detalles)}</td>
+        </tr>
+      `).join('')
+    } catch (e) {
+      console.error("Error al desplegar la auditoría", e)
+    }
+  }
+</script>
+</body>
+</html>
