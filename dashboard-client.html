@@ -120,7 +120,8 @@
             <h4>Aplicación Principal</h4>
             <p>Accede al generador, lector y organizador automatizado de eventos.</p>
           </div>
-          <a href="/app-principal.html" id="btn-app1" class="btn-app disabled">Entrar a la App</a>
+          <!-- Apunta de manera directa a tu repositorio o subcarpeta app1 -->
+          <a href="./app1/" id="btn-app1" class="btn-app disabled">Entrar a la App</a>
         </div>
 
         <div class="card-app">
@@ -128,7 +129,8 @@
             <h4>Módulo de Herramientas</h4>
             <p>Exportación de datos a Excel, vectorizaciones y utilidades adicionales.</p>
           </div>
-          <a href="/app-herramientas.html" id="btn-app2" class="btn-app disabled">Entrar al Módulo</a>
+          <!-- Apunta de manera directa a tu repositorio o subcarpeta app2 -->
+          <a href="./app2/" id="btn-app2" class="btn-app disabled">Entrar al Módulo</a>
         </div>
 
       </div>
@@ -146,7 +148,7 @@
   ;(async function init() {
     // 1. Validar sesión, rol de cliente y cuenta activa
     const profile = await guardAcceso('cliente')
-    if (!profile) return // guardAcceso se encarga de la redirección si falla
+    if (!profile) return // guardAcceso redirecciona si expira o no es cliente
 
     // 2. Pintar datos de cabecera
     document.getElementById('txt-nombre').textContent = profile.nombre
@@ -166,7 +168,7 @@
       const btnApp2  = document.getElementById('btn-app2')
 
       alertaEl.style.display = 'flex'
-      credSaldo.textContent  = acceso.creditos_disponibles || 0
+      credSaldo.textContent  = acceso.creditos_disponibles || 0[cite: 6]
 
       if (acceso.puede) {
         alertaEl.className = 'alerta-acceso con-acceso'
