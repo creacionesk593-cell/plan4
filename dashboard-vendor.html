@@ -14,6 +14,7 @@
       --verde:      #16a34a;
       --gris-100:   #f3f4f6;
       --gris-200:   #e5e7eb;
+      --gris-300:   #d1d5db;
       --gris-600:   #4b5563;
       --gris-900:   #111827;
       --radio:      12px;
@@ -46,7 +47,7 @@
     }
     .card h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
     
-    .form-group { margin-bottom: 16px; }
+    .form-group { margin-bottom: 16px; position: relative; }
     .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--gris-600); margin-bottom: 6px; }
     .form-inline { display: flex; gap: 12px; }
     .input-control {
@@ -55,6 +56,20 @@
     }
     .input-control:focus { border-color: var(--azul); }
     
+    /* Contenedor de Sugerencias de búsqueda predictiva */
+    .sugerencias-lista {
+      position: absolute; top: 100%; left: 0; right: 0;
+      background: #fff; border: 1.5px solid var(--gris-200); border-top: none;
+      border-radius: 0 0 8px 8px; max-height: 200px; overflow-y: auto;
+      z-index: 50; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    .sugerencia-item {
+      padding: 10px 14px; cursor: pointer; font-size: 14px;
+      display: flex; justify-content: space-between;
+    }
+    .sugerencia-item:hover { background: var(--gris-100); }
+    .sugerencia-item span { color: var(--gris-600); font-size: 12px; }
+
     .btn {
       padding: 10px 20px; background: var(--azul); color: #fff; border: none;
       border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
@@ -91,9 +106,11 @@
       <div class="form-group">
         <label for="input-email-buscar">Correo del Cliente</label>
         <div class="form-inline">
-          <input type="email" id="input-email-buscar" class="input-control" placeholder="cliente@correo.com">
-          <button class="btn" id="btn-buscar" onclick="buscarCliente()">Buscar</button>
+          <input type="email" id="input-email-buscar" class="input-control" placeholder="Escribe para buscar cliente..." autocomplete="off">
+          <button class="btn" id="btn-buscar" onclick="buscarClienteDirecto()">Buscar</button>
         </div>
+        <!-- Lista de coincidencia dinámica -->
+        <div id="lista-sugerencias" class="sugerencias-lista"></div>
       </div>
       <div id="box-resultado" class="info-busqueda"></div>
     </div>
@@ -124,13 +141,16 @@
 
   window.handleLogout = async function() { await logout() }
   
-  let clienteSeleccionado = null
+  let clienteSeleccionado = null;
+  const inputBuscar = document.getElementById('input-email-buscar');
+  const listaSugerencias = document.getElementById('lista-sugerencias');
 
   ;(async function init() {
     const profile = await guardAcceso('vendedor')
     if (!profile) return
     document.getElementById('txt-nombre').textContent = profile.nombre
     await cargarPlanes()
+    setupBuscadorPredictivo()
   })()
 
   async function cargarPlanes() {
@@ -144,38 +164,109 @@
     }
   }
 
-  window.buscarCliente = async function() {
+  // CONFIGURACIÓN DEL BUSCADOR EN TIEMPO REAL (LETRA POR LETRA)
+  function setupBuscadorPredictivo() {
+    inputBuscar.addEventListener('input', async () => {
+      const texto = inputBuscar.value.trim().toLowerCase();
+      if (texto.length < 1) {
+        listaSugerencias.style.display = 'none';
+        return;
+      }
+
+      try {
+        // Consultamos coincidencias directamente en la vista que contiene los estados
+        const { data, error } = await supabase
+          .from('vista_acceso_cliente')
+          .select('id, email, nombre')
+          .ilike('email', `%${texto}%`)
+          .limit(5);
+
+        if (error || !data || data.length === 0) {
+          listaSugerencias.style.display = 'none';
+          return;
+        }
+
+        listaSugerencias.innerHTML = data.map(cliente => `
+          <div class="sugerencia-item" data-email="${cliente.email}">
+            <strong>${cliente.email}</strong>
+            <span>${cliente.nombre}</span>
+          </div>
+        `).join('');
+        
+        listaSugerencias.style.display = 'block';
+
+        // Evento al dar clic a un elemento sugerido
+        document.querySelectorAll('.sugerencia-item').forEach(item => {
+          item.addEventListener('click', (e) => {
+            const emailElegido = item.getAttribute('data-email');
+            inputBuscar.value = emailElegido;
+            listaSugerencias.style.display = 'none';
+            consultarDetallesCliente(emailElegido);
+          });
+        });
+
+      } catch (err) {
+        console.error("Error buscando autocompletado:", err);
+      }
+    });
+
+    // Cerrar sugerencias al dar clic afuera
+    document.addEventListener('click', (e) => {
+      if (e.target !== inputBuscar && e.target !== listaSugerencias) {
+        listaSugerencias.style.display = 'none';
+      }
+    });
+  }
+
+  // Función usada si el vendedor escribe completo y da clic al botón "Buscar" manualmente
+  window.buscarClienteDirecto = function() {
+    const email = inputBuscar.value.trim();
+    if (!email) return mostrarError('Introduce un correo electrónico válido.');
+    consultarDetallesCliente(email);
+  }
+
+  // FUNCIÓN PRINCIPAL: Extrae y pinta todo acoplado a tu Vista
+  async function consultarDetallesCliente(email) {
     limpiarMensajes()
-    const email = document.getElementById('input-email-buscar').value.trim()
     const box = document.getElementById('box-resultado')
     const acciones = document.getElementById('card-acciones')
-    
-    if (!email) return mostrarError('Introduce un correo electrónico válido.')
 
     try {
-      const { data: cl, error } = await supabase.from('profiles').select('*').eq('email', email).eq('rol', 'cliente').single()
+      // Consultamos la fila única de este cliente dentro de tu vista_acceso_cliente
+      const { data: cl, error } = await supabase
+        .from('vista_acceso_cliente')
+        .select('*')
+        .eq('email', email)
+        .maybeSingle()
+
       if (error || !cl) {
         box.style.display = 'none'
         acciones.style.display = 'none'
-        return mostrarError('Cliente no encontrado o no tiene rol asignado.')
+        return mostrarError('Cliente no encontrado o no está catalogado.')
       }
 
-      clienteSeleccionado = cl
-      
-      // Obtener saldo de créditos e historial rápido si es necesario
-      const { data: cred } = await supabase.from('credits').select('saldo').eq('profile_id', cl.id).maybeSingle()
-      const { data: sub } = await supabase.from('subscriptions').select('vence_en, activa').eq('profile_id', cl.id).maybeSingle()
+      // Guardamos la referencia para las operaciones de botones
+      clienteSeleccionado = cl;
+
+      // Renderizado ajustado exactamente a los nombres de columna de tu Vista
+      const saldoCreditos = cl.creditos_disponibles || 0;[cite: 4]
+      let estadoSuscripcion = 'Sin suscripción activa';[cite: 4]
+
+      if (cl.tiene_suscripcion_activa && cl.suscripcion_vence_en) {[cite: 4]
+        const fecha = new Date(cl.suscripcion_vence_en).toLocaleDateString();[cite: 4]
+        estadoSuscripcion = `🟢 Activa (Vence el ${fecha})`;[cite: 4]
+      }
 
       box.innerHTML = `
         <strong>Nombre:</strong> ${cl.nombre}<br>
         <strong>Estado Cuenta:</strong> ${cl.activo ? '🟢 Activa' : '🔴 Inactiva'}<br>
-        <strong>Créditos Actuales:</strong> ${cred ? cred.saldo : 0} créditos<br>
-        <strong>Suscripción:</strong> ${sub && sub.activa ? 'Vence el ' + new Date(sub.vence_en).toLocaleDateString() : 'Sin suscripción activa'}
+        <strong>Créditos Actuales:</strong> ${saldoCreditos} créditos<br>[cite: 4]
+        <strong>Suscripción:</strong> ${estadoSuscripcion}
       `
       box.style.display = 'block'
       acciones.style.display = 'block'
     } catch (e) {
-      mostrarError('Ocurrió un error al procesar la búsqueda.')
+      mostrarError('Ocurrió un error al procesar la búsqueda del cliente.')
     }
   }
 
@@ -185,7 +276,6 @@
     const planId = document.getElementById('select-plan').value
 
     try {
-      // Invocación a la función RPC segura definida en tu base de datos
       const { error } = await supabase.rpc('asignar_plan_a_cliente', {
         p_cliente_id: clienteSeleccionado.id,
         p_plan_id: planId
@@ -193,7 +283,7 @@
       if (error) throw error
 
       mostrarExito('Suscripción asignada y activada correctamente.')
-      buscarCliente() // Refrescar los datos visuales
+      consultarDetallesCliente(clienteSeleccionado.email) // Recarga los datos en tiempo real
     } catch (e) {
       mostrarError(e.message || 'Error al intentar procesar la suscripción.')
     }
@@ -202,7 +292,7 @@
   window.recargarCreditos = async function() {
     if (!clienteSeleccionado) return
     limpiarMensajes()
-    const cant = parseInt(document.getElementById('input-creditos').value, 10)
+    const cant = parseInt(document.getElementById('input-credits' ? document.getElementById('input-creditos').value : '0'), 10)
     if (isNaN(cant) || cant <= 0) return mostrarError('Introduce una cantidad válida superior a 0.')
 
     try {
@@ -214,7 +304,7 @@
 
       mostrarExito(`Se han agregado ${cant} créditos al cliente con éxito.`);
       document.getElementById('input-creditos').value = ''
-      buscarCliente()
+      consultarDetallesCliente(clienteSeleccionado.email) // Recarga los datos en tiempo real
     } catch (e) {
       mostrarError(e.message || 'Error al intentar depositar los créditos.')
     }
