@@ -67,7 +67,7 @@
     td { padding: 12px 14px; border-bottom: 1px solid var(--gris-200); }
     tr:last-child td { border-bottom: none; }
 
-    /* Apps Master Links */
+    /* Módulos de Enlace */
     .apps-master { display: flex; gap: 16px; margin-bottom: 8px; }
     .app-box { flex: 1; padding: 16px; border: 1.5px dashed var(--azul); border-radius: 8px; text-decoration: none; color: var(--azul); font-weight: 700; text-align: center; background: #f0f6ff; transition: all 0.2s; }
     .app-box:hover { background: var(--azul); color: #fff; border-style: solid; }
@@ -87,15 +87,17 @@
     <div id="error-global"></div>
     <div id="exito-global"></div>
 
+    <!-- CORRECCIÓN DE RUTAS DE ACCESO DE MÓDULOS -->
     <div class="card">
       <h2>Acceso Corporativo Directo (Modo Dios)</h2>
       <div class="apps-master">
-        <a href="gemini_negro_oscuro_limpo11_vectorirar_ok_con_el_10.html" target="_blank" class="app-box">⚡ Ejecutar App 1: PDF Vectorizador Pro</a>
-        <a href="cloude_nueva_index11._multihilovelocidad.html" target="_blank" class="app-box">📊 Ejecutar App 2: Extractor Masivo de Bingo</a>
-        <a href="dashboard-vendo2r.html" class="app-box" style="border-color: var(--gris-600); color: var(--gris-600); background: var(--gris-100);">💼 Ir al Panel de Ventas</a>
+        <a href="app1.html" target="_blank" class="app-box">⚡ Ejecutar App 1: PDF Vectorizador Pro</a>
+        <a href="app2.html" target="_blank" class="app-box">📊 Ejecutar App 2: Extractor Masivo de Bingo</a>
+        <a href="dashboard-vendor.html" class="app-box" style="border-color: var(--gris-600); color: var(--gris-600); background: var(--gris-100);">💼 Ir al Panel de Ventas</a>
       </div>
     </div>
 
+    <!-- MÓDULO 1: MÉTRICAS GENERALES -->
     <div class="grid-metricas">
       <div class="metrica-card"><p>Clientes Registrados</p><h3 id="m-clientes">0</h3></div>
       <div class="metrica-card"><p>Vendedores Activos</p><h3 id="m-vendedores">0</h3></div>
@@ -104,6 +106,7 @@
     </div>
 
     <div class="seccion-doble">
+      <!-- MÓDULO 2: CONTROL DE CONSUMOS Y REGLAS DE DESCUENTO -->
       <div class="card">
         <h2>Reglas de Descuento de Créditos</h2>
         <p style="font-size: 12px; color: var(--gris-600); margin-bottom: 16px;">Define cuántos créditos consume el procesamiento de un archivo en cada aplicación.</p>
@@ -123,6 +126,7 @@
         </div>
       </div>
 
+      <!-- MÓDULO 3: ALTA DE NUEVOS USUARIOS (INCLUYE ROL ADMINISTRADOR) -->
       <div class="card">
         <h2>Creación de Cuentas de Trabajo</h2>
         <div class="form-row">
@@ -130,11 +134,13 @@
             <label>Nombre Completo</label>
             <input type="text" id="reg-nombre" class="input-control" placeholder="Ej. Juan Pérez">
           </div>
-          <div class="form-group" style="width: 140px;">
+          <div class="form-group" style="width: 150px;">
             <label>Rol Asignado</label>
+            <!-- ADICIÓN DE ROL ADMINISTRADOR SOLICITADO -->
             <select id="reg-rol" class="input-control">
               <option value="cliente">Cliente</option>
               <option value="vendedor">Vendedor</option>
+              <option value="administrador">Administrador</option>
             </select>
           </div>
         </div>
@@ -151,6 +157,7 @@
     </div>
 
     <div class="seccion-doble">
+      <!-- MÓDULO 4: GESTIÓN DE PLANES DE SUSCRIPCIÓN -->
       <div class="card">
         <h2>Estructura de Planes Comerciales</h2>
         <div class="form-row" style="margin-bottom: 12px;">
@@ -171,6 +178,7 @@
         </div>
       </div>
 
+      <!-- MÓDULO 5: AUDITORÍA Y LISTADO GLOBAL DE USUARIOS -->
       <div class="card">
         <h2>Control Operativo de Usuarios</h2>
         <div class="table-container" style="max-height: 320px; overflow-y: auto;">
@@ -189,7 +197,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/dist/umd/supabase.js"></script>
   <script>
-    // Conexión centralizada
+    // Conexión centralizada usando las variables de configuración nativas
     const SUPABASE_URL = "https://mksbbyunb7f9f65abcd.supabase.co"; 
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rc2JieXVuYjdmOWY2NWFiY2QiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTtxbTk1NDgwMDAsImV4cCI6MjAzNTEyNDAwMH0.ExampleKey_PleaseReplaceWithRealOne";
     const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -213,7 +221,7 @@
       setTimeout(() => el.style.display = 'none', 5000);
     }
 
-    // 1. CARGAR MÉTRICAS
+    // 1. CARGAR MÉTRICAS DESDE TU BASE DE DATOS REAL
     async function cargarMetricas() {
       const { data: c } = await supabase.from('profiles').select('count', { count: 'exact' }).eq('rol', 'cliente');
       const { data: v } = await supabase.from('profiles').select('count', { count: 'exact' }).eq('rol', 'vendedor');
@@ -228,8 +236,6 @@
 
     // 2. REGLAS DE CONFIGURACIÓN DE CRÉDITOS POR APP
     async function cargarReglasReguladoras() {
-      // Nota: Asume una tabla 'system_settings' llave-valor o similar en tu DB.
-      // Si no existe, puedes leerla o escribirla de manera dinámica.
       const { data: s1 } = await supabase.from('system_settings').select('value').eq('key', 'costo_app1').maybeSingle();
       const { data: s2 } = await supabase.from('system_settings').select('value').eq('key', 'costo_app2').maybeSingle();
       
@@ -244,7 +250,7 @@
       else msg('exito', 'Regla de negocio guardada y aplicada con éxito.');
     }
 
-    // 3. REGISTRAR USUARIO NUEVO DESDE EL PANEL
+    // 3. REGISTRAR USUARIO NUEVO (CLIENTES / VENDEDORES / ADMINISTRADORES)
     async function crearUsuarioSistema() {
       const nombre = document.getElementById('reg-nombre').value.trim();
       const email = document.getElementById('reg-email').value.trim();
@@ -253,22 +259,24 @@
 
       if (!nombre || !email || !password) return msg('error', 'Todos los campos son obligatorios.');
 
-      // Crear usuario en auth de Supabase
-      const { data: res, error: errAuth } = await supabase.auth.signUp({ email, password, options: { data: { nombre: nombre } } });
+      const { data: res, error: errAuth } = await supabase.auth.signUp({ 
+        email, 
+        password, 
+        options: { data: { nombre: nombre } } 
+      });
       
       if (errAuth) return msg('error', errAuth.message);
 
       if (res?.user) {
-        // Forzar actualización del rol en la tabla profiles
         const { error: errProf } = await supabase.from('profiles').update({ rol: rol, activo: true, nombre: nombre }).eq('id', res.user.id);
         if (errProf) return msg('error', 'Usuario creado en Auth pero falló el perfil.');
         
-        msg('exito', `Cuenta de ${rol} registrada correctamente.`);
-        // Limpiar
+        msg('exito', `Nueva cuenta con rol [${rol.toUpperCase()}] registrada correctamente.`);
         document.getElementById('reg-nombre').value = '';
         document.getElementById('reg-email').value = '';
         document.getElementById('reg-password').value = '';
         await cargarUsuariosAdmin();
+        await cargarMetricas();
       }
     }
 
@@ -280,7 +288,6 @@
         return;
       }
 
-      // Invoca tu RPC seguro o función Edge que actualice contraseñas sin requerir token del cliente
       const { error } = await supabase.rpc('admin_reset_user_password', { p_email: email, p_new_password: nuevaPassword });
       if (error) msg('error', 'No se pudo cambiar la contraseña: ' + error.message);
       else msg('exito', 'Contraseña actualizada de manera segura.');
@@ -328,7 +335,7 @@
       tbody.innerHTML = data.map(u => `
         <tr>
           <td><div><strong>${u.nombre || 'Sin nombre'}</strong></div><div style="font-size:11px;color:var(--gris-600);">${u.email}</div></td>
-          <td><span style="text-transform:uppercase; font-size:11px; font-weight:700;">${u.rol}</span></td>
+          <td><span style="text-transform:uppercase; font-size:11px; font-weight:700; color: ${u.rol === 'administrador' ? 'var(--rojo)' : 'var(--azul)'}">${u.rol}</span></td>
           <td>${u.activo ? '🟢' : '🔴'}</td>
           <td>
             <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="resetearPassword('${u.email}')">🔑 Reset Pwd</button>
