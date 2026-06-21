@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="frame-ancestors 'none'">
+  <title>Panel de Ventas</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --azul:       #2563eb;
+      --azul-hover: #1d4ed8;
+      --rojo:       #dc2626;
+      --verde:      #16a34a;
+      --gris-100:   #f3f4f6;
+      --gris-200:   #e5e7eb;
+      --gris-600:   #4b5563;
+      --gris-900:   #111827;
+      --radio:      12px;
+      --sombra:     0 4px 12px rgba(0,0,0,0.05);
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--gris-100);
+      color: var(--gris-900);
+      min-height: 100vh;
+    }
+    header {
+      background: #fff; padding: 16px 24px;
+      display: flex; justify-content: space-between; align-items: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .user-info h2 { font-size: 18px; font-weight: 700; }
+    .user-info p { font-size: 13px; color: var(--gris-600); }
+    .btn-logout {
+      background: none; border: 1.5px solid var(--gris-200); padding: 8px 14px;
+      border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .btn-logout:hover { background: var(--gris-100); }
+    
+    main { max-width: 800px; margin: 32px auto; padding: 0 16px; }
+    
+    .card {
+      background: #fff; padding: 24px; border-radius: var(--radio);
+      box-shadow: var(--sombra); margin-bottom: 24px;
+    }
+    .card h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+    
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--gris-600); margin-bottom: 6px; }
+    .form-inline { display: flex; gap: 12px; }
+    .input-control {
+      flex: 1; padding: 10px 14px; border: 1.5px solid var(--gris-200);
+      border-radius: 8px; font-size: 14px; outline: none;
+    }
+    .input-control:focus { border-color: var(--azul); }
+    
+    .btn {
+      padding: 10px 20px; background: var(--azul); color: #fff; border: none;
+      border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+    .btn:hover { background: var(--azul-hover); }
+    .btn:disabled { background: var(--gris-200); color: var(--gris-600); cursor: not-allowed; }
+    
+    .info-busqueda {
+      background: var(--gris-100); padding: 16px; border-radius: 8px;
+      margin-top: 16px; font-size: 14px; display: none; line-height: 1.6;
+    }
+    
+    #mensaje-error, #mensaje-exito { display: none; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; font-weight: 500; }
+    #mensaje-error { background: #fef2f2; color: var(--rojo); }
+    #mensaje-exito { background: #f0fdf4; color: var(--verde); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="user-info">
+      <h2 id="txt-nombre">Cargando...</h2>
+      <p>Panel de Gestión de Ventas</p>
+    </div>
+    <button class="btn-logout" onclick="handleLogout()">Cerrar sesión</button>
+  </header>
+
+  <main>
+    <div id="mensaje-error"></div>
+    <div id="mensaje-exito"></div>
+
+    <div class="card">
+      <h3>Buscar Cuenta de Cliente</h3>
+      <div class="form-group">
+        <label for="input-email-buscar">Correo del Cliente</label>
+        <div class="form-inline">
+          <input type="email" id="input-email-buscar" class="input-control" placeholder="cliente@correo.com">
+          <button class="btn" id="btn-buscar" onclick="buscarCliente()">Buscar</button>
+        </div>
+      </div>
+      <div id="box-resultado" class="info-busqueda"></div>
+    </div>
+
+    <div class="card" id="card-acciones" style="display: none;">
+      <h3>Asignar Licencia o Créditos</h3>
+      
+      <div class="form-group" style="border-top: 1px solid var(--gris-200); padding-top: 16px;">
+        <label for="select-plan">Seleccionar Plan de Activación</label>
+        <div class="form-inline">
+          <select id="select-plan" class="input-control"></select>
+          <button class="btn" onclick="asignarPlan()">Activar Plan</button>
+        </div>
+      </div>
+
+      <div class="form-group" style="border-top: 1px solid var(--gris-200); padding-top: 16px; margin-bottom: 0;">
+        <label for="input-creditos">Cantidad de Créditos a Recargar</label>
+        <div class="form-inline">
+          <input type="number" id="input-creditos" class="input-control" placeholder="Ej. 50" min="1">
+          <button class="btn" onclick="recargarCreditos()">Añadir Créditos</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+<script type="module">
+  import { supabase, guardAcceso, logout, mostrarError, mostrarExito, limpiarMensajes } from './configuracion.js'
+
+  window.handleLogout = async function() { await logout() }
+  
+  let clienteSeleccionado = null
+
+  ;(async function init() {
+    const profile = await guardAcceso('vendedor')
+    if (!profile) return
+    document.getElementById('txt-nombre').textContent = profile.nombre
+    await cargarPlanes()
+  })()
+
+  async function cargarPlanes() {
+    try {
+      const { data, error } = await supabase.from('plans').select('*').eq('activo', true).order('dias_duracion', { ascending: true })
+      if (error) throw error
+      const select = document.getElementById('select-plan')
+      select.innerHTML = data.map(p => `<option value="${p.id}">${p.nombre} ($${p.precio})</option>`).join('')
+    } catch (e) {
+      mostrarError('No se pudieron cargar los planes de suscripción.')
+    }
+  }
+
+  window.buscarCliente = async function() {
+    limpiarMensajes()
+    const email = document.getElementById('input-email-buscar').value.trim()
+    const box = document.getElementById('box-resultado')
+    const acciones = document.getElementById('card-acciones')
+    
+    if (!email) return mostrarError('Introduce un correo electrónico válido.')
+
+    try {
+      const { data: cl, error } = await supabase.from('profiles').select('*').eq('email', email).eq('rol', 'cliente').single()
+      if (error || !cl) {
+        box.style.display = 'none'
+        acciones.style.display = 'none'
+        return mostrarError('Cliente no encontrado o no tiene rol asignado.')
+      }
+
+      clienteSeleccionado = cl
+      
+      // Obtener saldo de créditos e historial rápido si es necesario
+      const { data: cred } = await supabase.from('credits').select('saldo').eq('profile_id', cl.id).maybeSingle()
+      const { data: sub } = await supabase.from('subscriptions').select('vence_en, activa').eq('profile_id', cl.id).maybeSingle()
+
+      box.innerHTML = `
+        <strong>Nombre:</strong> ${cl.nombre}<br>
+        <strong>Estado Cuenta:</strong> ${cl.activo ? '🟢 Activa' : '🔴 Inactiva'}<br>
+        <strong>Créditos Actuales:</strong> ${cred ? cred.saldo : 0} créditos<br>
+        <strong>Suscripción:</strong> ${sub && sub.activa ? 'Vence el ' + new Date(sub.vence_en).toLocaleDateString() : 'Sin suscripción activa'}
+      `
+      box.style.display = 'block'
+      acciones.style.display = 'block'
+    } catch (e) {
+      mostrarError('Ocurrió un error al procesar la búsqueda.')
+    }
+  }
+
+  window.asignarPlan = async function() {
+    if (!clienteSeleccionado) return
+    limpiarMensajes()
+    const planId = document.getElementById('select-plan').value
+
+    try {
+      // Invocación a la función RPC segura definida en tu base de datos
+      const { error } = await supabase.rpc('asignar_plan_a_cliente', {
+        p_cliente_id: clienteSeleccionado.id,
+        p_plan_id: planId
+      })
+      if (error) throw error
+
+      mostrarExito('Suscripción asignada y activada correctamente.')
+      buscarCliente() // Refrescar los datos visuales
+    } catch (e) {
+      mostrarError(e.message || 'Error al intentar procesar la suscripción.')
+    }
+  }
+
+  window.recargarCreditos = async function() {
+    if (!clienteSeleccionado) return
+    limpiarMensajes()
+    const cant = parseInt(document.getElementById('input-creditos').value, 10)
+    if (isNaN(cant) || cant <= 0) return mostrarError('Introduce una cantidad válida superior a 0.')
+
+    try {
+      const { error } = await supabase.rpc('recargar_creditos_cliente', {
+        p_cliente_id: clienteSeleccionado.id,
+        p_cantidad: cant
+      })
+      if (error) throw error
+
+      mostrarExito(`Se han agregado ${cant} créditos al cliente con éxito.`);
+      document.getElementById('input-creditos').value = ''
+      buscarCliente()
+    } catch (e) {
+      mostrarError(e.message || 'Error al intentar depositar los créditos.')
+    }
+  }
+</script>
+</body>
+</html>
