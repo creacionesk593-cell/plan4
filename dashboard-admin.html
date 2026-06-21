@@ -30,7 +30,7 @@
     }
     .brand { font-size: 18px; font-weight: 700; color: var(--azul); }
     .btn {
-      padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600;
+      padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 600;
       cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;
     }
     .btn-primary { background: var(--azul); color: #fff; }
@@ -72,6 +72,8 @@
     .app-box { flex: 1; padding: 16px; border: 1.5px dashed var(--azul); border-radius: 8px; text-decoration: none; color: var(--azul); font-weight: 700; text-align: center; background: #f0f6ff; transition: all 0.2s; }
     .app-box:hover { background: var(--azul); color: #fff; border-style: solid; }
 
+    .acciones-td { display: flex; gap: 6px; }
+
     #error-global { display: none; background: #fef2f2; color: var(--rojo); padding: 12px; border-radius: 6px; font-weight: 500; border: 1px solid #fecaca; }
     #exito-global { display: none; background: #f0fdf4; color: var(--verde); padding: 12px; border-radius: 6px; font-weight: 500; border: 1px solid #bbf7d0; }
   </style>
@@ -87,7 +89,7 @@
     <div id="error-global"></div>
     <div id="exito-global"></div>
 
-    <!-- CORRECCIÓN DE RUTAS DE ACCESO DE MÓDULOS -->
+    <!-- ACCESOS GITHUB CORREGIDOS -->
     <div class="card">
       <h2>Acceso Corporativo Directo (Modo Dios)</h2>
       <div class="apps-master">
@@ -97,16 +99,16 @@
       </div>
     </div>
 
-    <!-- MÓDULO 1: MÉTRICAS GENERALES -->
+    <!-- MÉTRICAS -->
     <div class="grid-metricas">
-      <div class="metrica-card"><p>Clientes Registrados</p><h3 id="m-clientes">0</h3></div>
-      <div class="metrica-card"><p>Vendedores Activos</p><h3 id="m-vendedores">0</h3></div>
-      <div class="metrica-card"><p>Suscripciones Vigentes</p><h3 id="m-suscripciones">0</h3></div>
-      <div class="metrica-card"><p>Total Matrices en Nube</p><h3 id="m-matrices">0</h3></div>
+      <div class="metrica-card"><p>Clientes Registrados</p><h3 id="m-clientes">...</h3></div>
+      <div class="metrica-card"><p>Vendedores Activos</p><h3 id="m-vendedores">...</h3></div>
+      <div class="metrica-card"><p>Suscripciones Vigentes</p><h3 id="m-suscripciones">...</h3></div>
+      <div class="metrica-card"><p>Total Matrices en Nube</p><h3 id="m-matrices">...</h3></div>
     </div>
 
     <div class="seccion-doble">
-      <!-- MÓDULO 2: CONTROL DE CONSUMOS Y REGLAS DE DESCUENTO -->
+      <!-- CONTROL DE DESCUENTOS -->
       <div class="card">
         <h2>Reglas de Descuento de Créditos</h2>
         <p style="font-size: 12px; color: var(--gris-600); margin-bottom: 16px;">Define cuántos créditos consume el procesamiento de un archivo en cada aplicación.</p>
@@ -114,19 +116,19 @@
           <label>Costo de Procesamiento App 1 (Por archivo PDF)</label>
           <div class="form-row">
             <input type="number" id="cfg-app1" class="input-control" placeholder="Ej. 1" min="0">
-            <button class="btn btn-primary" onclick="guardarReglaCostos('costo_app1', 'cfg-app1')">Actualizar</button>
+            <button class="btn btn-primary" id="btn-save-app1">Actualizar</button>
           </div>
         </div>
         <div class="form-group" style="margin-bottom: 0;">
           <label>Costo de Procesamiento App 2 (Por archivo PDF)</label>
           <div class="form-row">
             <input type="number" id="cfg-app2" class="input-control" placeholder="Ej. 2" min="0">
-            <button class="btn btn-primary" onclick="guardarReglaCostos('costo_app2', 'cfg-app2')">Actualizar</button>
+            <button class="btn btn-primary" id="btn-save-app2">Actualizar</button>
           </div>
         </div>
       </div>
 
-      <!-- MÓDULO 3: ALTA DE NUEVOS USUARIOS (INCLUYE ROL ADMINISTRADOR) -->
+      <!-- ALTA DE USUARIOS -->
       <div class="card">
         <h2>Creación de Cuentas de Trabajo</h2>
         <div class="form-row">
@@ -136,7 +138,6 @@
           </div>
           <div class="form-group" style="width: 150px;">
             <label>Rol Asignado</label>
-            <!-- ADICIÓN DE ROL ADMINISTRADOR SOLICITADO -->
             <select id="reg-rol" class="input-control">
               <option value="cliente">Cliente</option>
               <option value="vendedor">Vendedor</option>
@@ -152,19 +153,19 @@
           <label>Contraseña Inicial</label>
           <input type="password" id="reg-password" class="input-control" placeholder="Mínimo 6 caracteres">
         </div>
-        <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="crearUsuarioSistema()">🚀 Dar de Alta en la Plataforma</button>
+        <button class="btn btn-primary" style="width:100%; justify-content:center;" id="btn-crear-usuario">🚀 Dar de Alta en la Plataforma</button>
       </div>
     </div>
 
     <div class="seccion-doble">
-      <!-- MÓDULO 4: GESTIÓN DE PLANES DE SUSCRIPCIÓN -->
+      <!-- PLANES COMERCIALES -->
       <div class="card">
         <h2>Estructura de Planes Comerciales</h2>
         <div class="form-row" style="margin-bottom: 12px;">
-          <input type="text" id="plan-nombre" class="input-control" placeholder="Nombre (Ej: Plan Mensual Pro)" style="flex:2;">
-          <input type="number" id="plan-dias" class="input-control" placeholder="Días (Ej: 30)" style="flex:1;">
-          <input type="number" id="plan-precio" class="input-control" placeholder="Precio ($)" style="flex:1;" step="0.01">
-          <button class="btn btn-primary" onclick="crearPlanComercial()">+ Crear</button>
+          <input type="text" id="plan-nombre" class="input-control" placeholder="Nombre" style="flex:2;">
+          <input type="number" id="plan-dias" class="input-control" placeholder="Días" style="flex:1;">
+          <input type="number" id="plan-precio" class="input-control" placeholder="Precio" style="flex:1;" step="0.01">
+          <button class="btn btn-primary" id="btn-crear-plan">+ Crear</button>
         </div>
         <div class="table-container">
           <table>
@@ -178,7 +179,7 @@
         </div>
       </div>
 
-      <!-- MÓDULO 5: AUDITORÍA Y LISTADO GLOBAL DE USUARIOS -->
+      <!-- CONTROL OPERATIVO REESTABLECIDO CON SUSPENDER -->
       <div class="card">
         <h2>Control Operativo de Usuarios</h2>
         <div class="table-container" style="max-height: 320px; overflow-y: auto;">
@@ -195,159 +196,194 @@
     </div>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/dist/umd/supabase.js"></script>
-  <script>
-    // Conexión centralizada usando las variables de configuración nativas
-    const SUPABASE_URL = "https://mksbbyunb7f9f65abcd.supabase.co"; 
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rc2JieXVuYjdmOWY2NWFiY2QiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTtxbTk1NDgwMDAsImV4cCI6MjAzNTEyNDAwMH0.ExampleKey_PleaseReplaceWithRealOne";
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+<script type="module">
+  // IMPORTACIÓN DESDE TU ARCHIVO DE CONFIGURACIÓN ORIGINAL
+  import { supabase, guardAcceso, logout, mostrarError, mostrarExito, limpiarMensajes } from './configuracion.js'
 
-    document.addEventListener('DOMContentLoaded', async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        window.location.href = 'index.html';
-        return;
-      }
-      
-      await cargarMetricas();
-      await cargarReglasReguladoras();
-      await cargarPlanesAdmin();
-      await cargarUsuariosAdmin();
+  // Redirección de salida de sesión global
+  window.cerrarSesionAdmin = async function() {
+    await logout();
+    window.location.href = 'index.html';
+  }
+
+  // Inicialización Segura
+  ;(async function init() {
+    // Validamos que el rol sea administrador usando tu guard original
+    const profile = await guardAcceso('administrador');
+    if (!profile) return;
+
+    await cargarMetricas();
+    await cargarReglasReguladoras();
+    await cargarPlanesAdmin();
+    await cargarUsuariosAdmin();
+    setupEventListeners();
+  })();
+
+  function msg(tipo, texto) {
+    const el = document.getElementById(tipo === 'error' ? 'error-global' : 'exito-global');
+    el.textContent = texto; el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 5000);
+  }
+
+  // 1. CARGAR MÉTRICAS DESDE LAS TABLAS CORRECTAS
+  async function cargarMetricas() {
+    const { count: c } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('rol', 'cliente');
+    const { count: v } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('rol', 'vendedor');
+    const { count: s } = await supabase.from('subscriptions').select('*', { count: 'exact', head: true }).eq('activa', true);
+    const { count: m } = await supabase.from('user_cartones').select('*', { count: 'exact', head: true });
+
+    document.getElementById('m-clientes').textContent = c || 0;
+    document.getElementById('m-vendedores').textContent = v || 0;
+    document.getElementById('m-suscripciones').textContent = s || 0;
+    document.getElementById('m-matrices').textContent = m || 0;
+  }
+
+  // 2. CONFIGURACIÓN DE REGLAS DE CRÉDITOS
+  async function cargarReglasReguladoras() {
+    const { data: s1 } = await supabase.from('system_settings').select('value').eq('key', 'costo_app1').maybeSingle();
+    const { data: s2 } = await supabase.from('system_settings').select('value').eq('key', 'costo_app2').maybeSingle();
+    
+    document.getElementById('cfg-app1').value = s1?.value || 1;
+    document.getElementById('cfg-app2').value = s2?.value || 2;
+  }
+
+  async function actualizarRegla(llave, inputId) {
+    const valor = document.getElementById(inputId).value;
+    const { error } = await supabase.from('system_settings').upsert({ key: llave, value: valor }, { onConflict: 'key' });
+    if (error) msg('error', 'Error al guardar la regla.');
+    else msg('exito', 'Regla de negocio actualizada en producción.');
+  }
+
+  // 3. CREAR NUEVOS USUARIOS EN ENTORNO DE MÓDULO
+  async function registrarUsuario() {
+    const nombre = document.getElementById('reg-nombre').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value.trim();
+    const rol = document.getElementById('reg-rol').value;
+
+    if (!nombre || !email || !password) return msg('error', 'Completa todos los datos requeridos.');
+
+    const { data: res, error: errAuth } = await supabase.auth.signUp({ 
+      email, 
+      password, 
+      options: { data: { nombre: nombre } } 
     });
+    
+    if (errAuth) return msg('error', errAuth.message);
 
-    function msg(tipo, texto) {
-      const el = document.getElementById(tipo === 'error' ? 'error-global' : 'exito-global');
-      el.textContent = texto; el.style.display = 'block';
-      setTimeout(() => el.style.display = 'none', 5000);
-    }
-
-    // 1. CARGAR MÉTRICAS DESDE TU BASE DE DATOS REAL
-    async function cargarMetricas() {
-      const { data: c } = await supabase.from('profiles').select('count', { count: 'exact' }).eq('rol', 'cliente');
-      const { data: v } = await supabase.from('profiles').select('count', { count: 'exact' }).eq('rol', 'vendedor');
-      const { data: s } = await supabase.from('subscriptions').select('count', { count: 'exact' }).eq('activa', true);
-      const { data: m } = await supabase.from('user_cartones').select('count', { count: 'exact' });
-
-      document.getElementById('m-clientes').textContent = c?.[0]?.count || 0;
-      document.getElementById('m-vendedores').textContent = v?.[0]?.count || 0;
-      document.getElementById('m-suscripciones').textContent = s?.[0]?.count || 0;
-      document.getElementById('m-matrices').textContent = m?.[0]?.count || 0;
-    }
-
-    // 2. REGLAS DE CONFIGURACIÓN DE CRÉDITOS POR APP
-    async function cargarReglasReguladoras() {
-      const { data: s1 } = await supabase.from('system_settings').select('value').eq('key', 'costo_app1').maybeSingle();
-      const { data: s2 } = await supabase.from('system_settings').select('value').eq('key', 'costo_app2').maybeSingle();
+    if (res?.user) {
+      const { error: errProf } = await supabase.from('profiles').update({ rol: rol, activo: true, nombre: nombre }).eq('id', res.user.id);
+      if (errProf) return msg('error', 'Usuario creado, pero no se pudo asignar su rol en la tabla profiles.');
       
-      document.getElementById('cfg-app1').value = s1?.value || 1;
-      document.getElementById('cfg-app2').value = s2?.value || 2;
+      msg('exito', `Se ha creado el usuario [${nombre}] con el rol ${rol.toUpperCase()} perfectamente.`);
+      document.getElementById('reg-nombre').value = '';
+      document.getElementById('reg-email').value = '';
+      document.getElementById('reg-password').value = '';
+      await cargarUsuariosAdmin();
+      await cargarMetricas();
+    }
+  }
+
+  // 4. FUNCIONALIDAD RECUPERADA: SUSPENDER / ACTIVAR USUARIOS
+  window.alternarEstadoUsuario = async function(id, estadoActual) {
+    const nuevoEstado = !estadoActual;
+    const { error } = await supabase.from('profiles').update({ activo: nuevoEstado }).eq('id', id);
+    
+    if (error) {
+      msg('error', 'No se pudo cambiar el estado del usuario.');
+    } else {
+      msg('exito', 'Estado del usuario actualizado con éxito.');
+      await cargarUsuariosAdmin();
+      await cargarMetricas();
+    }
+  }
+
+  // 5. RESTABLECER CONTRASEÑA DIRECTA
+  window.resetearPasswordAdmin = async function(email) {
+    const nuevaPassword = prompt(`Introduce la nueva contraseña de forma directa para ${email}:`);
+    if (!nuevaPassword || nuevaPassword.length < 6) return alert('Contraseña descartada o demasiado corta (Mínimo 6 dígitos).');
+
+    const { error } = await supabase.rpc('admin_reset_user_password', { p_email: email, p_new_password: nuevaPassword });
+    if (error) msg('error', 'Error en RPC de base de datos: ' + error.message);
+    else msg('exito', 'Contraseña actualizada correctamente de manera segura.');
+  }
+
+  // 6. GESTIÓN DE PLANES COMERCIALES
+  async function cargarPlanesAdmin() {
+    const { data } = await supabase.from('plans').select('*').order('dias_duracion', { ascending: true });
+    const tbody = document.getElementById('tbody-planes');
+    if (!data || data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No hay planes vigentes.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = data.map(p => `
+      <tr>
+        <td><strong>${p.nombre}</strong></td>
+        <td>${p.dias_duracion} días</td>
+        <td>$${p.precio}</td>
+        <td>${p.activo ? '🟢 Activo' : '🔴 Inactivo'}</td>
+      </tr>
+    `).join('');
+  }
+
+  async function crearNuevoPlan() {
+    const nombre = document.getElementById('plan-nombre').value.trim();
+    const dias = parseInt(document.getElementById('plan-dias').value, 10);
+    const precio = parseFloat(document.getElementById('plan-precio').value);
+
+    if (!nombre || isNaN(dias) || isNaN(precio)) return msg('error', 'Los datos del plan comercial están incompletos.');
+
+    const { error } = await supabase.from('plans').insert([{ nombre, dias_duracion: dias, precio, activo: true }]);
+    if (error) msg('error', error.message);
+    else {
+      msg('exito', 'Plan creado y agregado al catálogo de ventas.');
+      document.getElementById('plan-nombre').value = '';
+      document.getElementById('plan-dias').value = '';
+      document.getElementById('plan-precio').value = '';
+      await cargarPlanesAdmin();
+    }
+  }
+
+  // 7. RENDERIZADO GLOBAL DE LA TABLA CON LOS BOTONES DE ACCIÓN ORIGINALES
+  async function cargarUsuariosAdmin() {
+    const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+    const tbody = document.getElementById('tbody-usuarios');
+    if (error || !data) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:red;">Error al cargar datos.</td></tr>`;
+      return;
     }
 
-    async function guardarReglaCostos(llave, inputId) {
-      const valor = document.getElementById(inputId).value;
-      const { error } = await supabase.from('system_settings').upsert({ key: llave, value: valor }, { onConflict: 'key' });
-      if (error) msg('error', 'Error actualizando regla de consumos.');
-      else msg('exito', 'Regla de negocio guardada y aplicada con éxito.');
-    }
-
-    // 3. REGISTRAR USUARIO NUEVO (CLIENTES / VENDEDORES / ADMINISTRADORES)
-    async function crearUsuarioSistema() {
-      const nombre = document.getElementById('reg-nombre').value.trim();
-      const email = document.getElementById('reg-email').value.trim();
-      const password = document.getElementById('reg-password').value.trim();
-      const rol = document.getElementById('reg-rol').value;
-
-      if (!nombre || !email || !password) return msg('error', 'Todos los campos son obligatorios.');
-
-      const { data: res, error: errAuth } = await supabase.auth.signUp({ 
-        email, 
-        password, 
-        options: { data: { nombre: nombre } } 
-      });
+    tbody.innerHTML = data.map(u => {
+      const colorRol = u.rol === 'administrador' ? 'var(--rojo)' : u.rol === 'vendedor' ? 'var(--azul)' : 'var(--gris-600)';
+      const textoBotonSuspender = u.activo ? 'Suspender' : 'Activar';
+      const claseBotonSuspender = u.activo ? 'btn-secondary' : 'btn-primary';
       
-      if (errAuth) return msg('error', errAuth.message);
-
-      if (res?.user) {
-        const { error: errProf } = await supabase.from('profiles').update({ rol: rol, activo: true, nombre: nombre }).eq('id', res.user.id);
-        if (errProf) return msg('error', 'Usuario creado en Auth pero falló el perfil.');
-        
-        msg('exito', `Nueva cuenta con rol [${rol.toUpperCase()}] registrada correctamente.`);
-        document.getElementById('reg-nombre').value = '';
-        document.getElementById('reg-email').value = '';
-        document.getElementById('reg-password').value = '';
-        await cargarUsuariosAdmin();
-        await cargarMetricas();
-      }
-    }
-
-    // 4. RESTABLECER CONTRASEÑA DIRECTAMENTE
-    async function resetearPassword(email) {
-      const nuevaPassword = prompt(`Introduce la nueva contraseña para ${email}:`);
-      if (!nuevaPassword || nuevaPassword.length < 6) {
-        alert('Contraseña inválida o muy corta (Mínimo 6 caracteres).');
-        return;
-      }
-
-      const { error } = await supabase.rpc('admin_reset_user_password', { p_email: email, p_new_password: nuevaPassword });
-      if (error) msg('error', 'No se pudo cambiar la contraseña: ' + error.message);
-      else msg('exito', 'Contraseña actualizada de manera segura.');
-    }
-
-    // 5. GESTIÓN DE PLANES
-    async function cargarPlanesAdmin() {
-      const { data } = await supabase.from('plans').select('*').order('dias_duracion', { ascending: true });
-      const tbody = document.getElementById('tbody-planes');
-      if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No hay planes.</td></tr>`;
-        return;
-      }
-      tbody.innerHTML = data.map(p => `
+      return `
         <tr>
-          <td><strong>${p.nombre}</strong></td>
-          <td>${p.dias_duracion} días</td>
-          <td>$${p.precio}</td>
-          <td>${p.activo ? '🟢 Activo' : '🔴 Inactivo'}</td>
-        </tr>
-      `).join('');
-    }
-
-    async function crearPlanComercial() {
-      const nombre = document.getElementById('plan-nombre').value.trim();
-      const dias = parseInt(document.getElementById('plan-dias').value, 10);
-      const precio = parseFloat(document.getElementById('plan-precio').value);
-
-      if (!nombre || isNaN(dias) || isNaN(precio)) return msg('error', 'Completa los datos del plan.');
-
-      const { error } = await supabase.from('plans').insert([{ nombre, dias_duracion: dias, precio, activo: true }]);
-      if (error) msg('error', error.message);
-      else {
-        msg('exito', 'Nuevo plan comercial creado.');
-        await cargarPlanesAdmin();
-      }
-    }
-
-    // 6. GESTIÓN DE USUARIOS GLOBALES
-    async function cargarUsuariosAdmin() {
-      const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-      const tbody = document.getElementById('tbody-usuarios');
-      if (!data) return;
-
-      tbody.innerHTML = data.map(u => `
-        <tr>
-          <td><div><strong>${u.nombre || 'Sin nombre'}</strong></div><div style="font-size:11px;color:var(--gris-600);">${u.email}</div></td>
-          <td><span style="text-transform:uppercase; font-size:11px; font-weight:700; color: ${u.rol === 'administrador' ? 'var(--rojo)' : 'var(--azul)'}">${u.rol}</span></td>
-          <td>${u.activo ? '🟢' : '🔴'}</td>
           <td>
-            <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="resetearPassword('${u.email}')">🔑 Reset Pwd</button>
+            <div><strong>${u.nombre || 'Sin nombre asignado'}</strong></div>
+            <div style="font-size:11px; color:var(--gris-600);">${u.email}</div>
+          </td>
+          <td><span style="text-transform:uppercase; font-size:11px; font-weight:700; color: ${colorRol}">${u.rol}</span></td>
+          <td>${u.activo ? '<span style="color:var(--verde); font-weight:600;">ACTIVO</span>' : '<span style="color:var(--rojo); font-weight:600;">SUSPENDIDO</span>'}</td>
+          <td>
+            <div class="acciones-td">
+              <button class="btn ${claseBotonSuspender}" style="padding:4px 8px; font-size:11px;" onclick="alternarEstadoUsuario('${u.id}', ${u.activo})">${textoBotonSuspender}</button>
+              <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="resetearPasswordAdmin('${u.email}')">🔑 Reset Pwd</button>
+            </div>
           </td>
         </tr>
-      `).join('');
-    }
+      `;
+    }).join('');
+  }
 
-    async function cerrarSesionAdmin() {
-      await supabase.auth.signOut();
-      window.location.href = 'index.html';
-    }
-  </script>
+  // Enlazar los disparadores dentro del esquema de módulos
+  function setupEventListeners() {
+    document.getElementById('btn-save-app1').addEventListener('click', () => actualizarRegla('costo_app1', 'cfg-app1'));
+    document.getElementById('btn-save-app2').addEventListener('click', () => actualizarRegla('costo_app2', 'cfg-app2'));
+    document.getElementById('btn-crear-usuario').addEventListener('click', registrarUsuario);
+    document.getElementById('btn-crear-plan').addEventListener('click', crearNuevoPlan);
+  }
+</script>
 </body>
 </html>
