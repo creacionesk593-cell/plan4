@@ -60,15 +60,17 @@
     /* Contenedor de Sugerencias de búsqueda predictiva */
     .sugerencias-lista {
       position: absolute; top: 100%; left: 0; right: 0;
-      background: #fff; border: 1.5px solid var(--gris-200); border-top: none;
+      background: #fff; border: 1.5px solid var(--gris-200);
       border-radius: 0 0 8px 8px; max-height: 200px; overflow-y: auto;
-      z-index: 50; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      z-index: 100; display: none; box-shadow: 0 8px 16px rgba(0,0,0,0.1);
     }
     .sugerencia-item {
       padding: 10px 14px; cursor: pointer; font-size: 14px;
-      display: flex; justify-content: space-between;
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid var(--gris-100);
     }
-    .sugerencia-item:hover { background: var(--gris-100); }
+    .sugerencia-item:last-child { border-bottom: none; }
+    .sugerencia-item:hover { background: var(--gris-100); color: var(--azul); }
     .sugerencia-item span { color: var(--gris-600); font-size: 12px; }
 
     .btn {
@@ -82,11 +84,12 @@
     .info-busqueda {
       background: var(--gris-100); padding: 16px; border-radius: 8px;
       margin-top: 16px; font-size: 14px; display: none; line-height: 1.6;
+      border: 1px solid var(--gris-200);
     }
     
     #mensaje-error, #mensaje-exito { display: none; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; font-weight: 500; }
-    #mensaje-error { background: #fef2f2; color: var(--rojo); }
-    #mensaje-exito { background: #f0fdf4; color: var(--verde); }
+    #mensaje-error { background: #fef2f2; color: var(--rojo); border: 1px solid #fecaca; }
+    #mensaje-exito { background: #f0fdf4; color: var(--verde); border: 1px solid #bbf7d0; }
   </style>
 </head>
 <body>
@@ -96,7 +99,6 @@
       <h2 id="txt-nombre">Cargando...</h2>
       <p>Panel de Gestión de Ventas</p>
     </div>
-    <!-- CORRECCIÓN DE CIERRE DE SESIÓN -->
     <button class="btn-logout" onclick="handleLogout()">Cerrar sesión</button>
   </header>
 
@@ -109,11 +111,9 @@
       <div class="form-group">
         <label for="input-email-buscar">Correo del Cliente</label>
         <div class="form-inline">
-          <!-- INPUT ACTUALIZADO PARA CAPTURAR CADA LETRA EN TIEMPO REAL -->
           <input type="email" id="input-email-buscar" class="input-control" placeholder="Escribe para buscar cliente al instante..." autocomplete="off">
           <button class="btn" id="btn-buscar" onclick="buscarClienteDirecto()">Buscar</button>
         </div>
-        <!-- Lista de coincidencia dinámica -->
         <div id="lista-sugerencias" class="sugerencias-lista"></div>
       </div>
       <div id="box-resultado" class="info-busqueda"></div>
@@ -143,7 +143,6 @@
 <script type="module">
   import { supabase, guardAcceso, logout, mostrarError, mostrarExito, limpiarMensajes } from './configuracion.js'
 
-  // CORRECCIÓN SOLICITADA: CIERRE DE SESIÓN REDIRECCIONA DIRECTAMENTE A INDEX.HTML
   window.handleLogout = async function() { 
     await logout();
     window.location.href = 'index.html';
@@ -172,24 +171,18 @@
     }
   }
 
-  // AJUSTE SOLICITADO: CONFIGURACIÓN COMPLETAMENTE FLUIDA LETRA POR LETRA
+  // BUSCADOR PREDICTIVO SEPARADO DE LA CONSULTA AUTOMÁTICA
   function setupBuscadorPredictivo() {
     inputBuscar.addEventListener('input', async () => {
       const texto = inputBuscar.value.trim().toLowerCase();
       
       if (texto.length < 1) {
         listaSugerencias.style.display = 'none';
-        document.getElementById('box-resultado').style.display = 'none';
-        document.getElementById('card-acciones').style.display = 'none';
         return;
       }
 
-      // Si el vendedor ya escribió un correo estructurado completo, consulta los detalles automáticamente sin esperar clics
-      if (validarEstructuraEmail(texto)) {
-        consultarDetallesCliente(texto);
-      }
-
       try {
+        // Buscar coincidencias parciales para la lista desplegable
         const { data, error } = await supabase
           .from('vista_acceso_cliente')
           .select('id, email, nombre')
@@ -210,17 +203,13 @@
         
         listaSugerencias.style.display = 'block';
 
-        // Al hacer clic sobre una de las sugerencias predictivas
-        document.querySelectorAll('.sugerencia-item').forEach(item => {
-          item.replaceWith(item.cloneNode(true)); // Limpiar listeners viejos
-        });
-
+        // Listeners para los clics en los elementos del menú desplegable
         document.querySelectorAll('.sugerencia-item').forEach(item => {
           item.addEventListener('click', () => {
             const emailElegido = item.getAttribute('data-email');
             inputBuscar.value = emailElegido;
-            listaSugerencias.style.display = 'none';
-            consultarDetallesCliente(emailElegido);
+            listaSugerencias.style.display = 'none'; // Cerrar inmediatamente
+            consultarDetallesCliente(emailElegido);  // Ejecutar consulta limpia
           });
         });
 
@@ -229,7 +218,7 @@
       }
     });
 
-    // Cerrar sugerencias al dar clic afuera
+    // Cerrar sugerencias si se hace clic en cualquier otra parte de la pantalla
     document.addEventListener('click', (e) => {
       if (e.target !== inputBuscar && e.target !== listaSugerencias) {
         listaSugerencias.style.display = 'none';
@@ -237,15 +226,10 @@
     });
   }
 
-  // Función auxiliar de validación sintáctica para el trigger automático letra por letra
-  function validarEstructuraEmail(email) {
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return regex.test(email);
-  }
-
   window.buscarClienteDirecto = function() {
     const email = inputBuscar.value.trim();
     if (!email) return mostrarError('Introduce un correo electrónico válido.');
+    listaSugerencias.style.display = 'none'; // Ocultar sugerencias al buscar de forma directa
     consultarDetallesCliente(email);
   }
 
@@ -262,31 +246,32 @@
         .maybeSingle()
 
       if (error || !cl) {
-        // Mantiene ocultos los paneles si se sigue editando y no coincide de manera exacta con nadie
         box.style.display = 'none'
         acciones.style.display = 'none'
+        mostrarError('No se encontró ningún cliente registrado con ese correo exacto.')
         return;
       }
 
       clienteSeleccionado = cl;
-      const saldoCreditos = cl.creditos_disponibles || 0;[cite: 4]
-      let estadoSuscripcion = 'Sin suscripción activa';[cite: 4]
+      const saldoCreditos = cl.creditos_disponibles || 0;
+      let estadoSuscripcion = 'Sin suscripción activa';
 
-      if (cl.tiene_suscripcion_activa && cl.suscripcion_vence_en) {[cite: 4]
-        const fecha = new Date(cl.suscripcion_vence_en).toLocaleDateString();[cite: 4]
-        estadoSuscripcion = `🟢 Activa (Vence el ${fecha})`;[cite: 4]
+      if (cl.tiene_suscripcion_activa && cl.suscripcion_vence_en) {
+        const fecha = new Date(cl.suscripcion_vence_en).toLocaleDateString();
+        estadoSuscripcion = `🟢 Activa (Vence el ${fecha})`;
       }
 
       box.innerHTML = `
         <strong>Nombre:</strong> ${cl.nombre}<br>
         <strong>Estado Cuenta:</strong> ${cl.activo ? '🟢 Activa' : '🔴 Inactiva'}<br>
-        <strong>Créditos Actuales:</strong> ${saldoCreditos} créditos<br>[cite: 4]
+        <strong>Créditos Actuales:</strong> ${saldoCreditos} créditos<br>
         <strong>Suscripción:</strong> ${estadoSuscripcion}
       `
       box.style.display = 'block'
       acciones.style.display = 'block'
     } catch (e) {
       console.error(e);
+      mostrarError('Error al recuperar la información detallada del cliente.');
     }
   }
 
