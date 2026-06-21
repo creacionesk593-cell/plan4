@@ -1,0 +1,1616 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extractor de Bingo - Profesional</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 10px; background-color: #f0f2f5; font-size: 13px; }
+        .container { max-width: 1600px; margin: 0 auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        
+        .header { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+        .header label { font-weight: 600; font-size: 12px; }
+        .header input[type="file"] { flex: 1; min-width: 150px; }
+        .header select { padding: 4px 8px; border-radius: 4px; border: 1px solid #cbd5e1; font-size: 12px; }
+        .header .btn-small { padding: 4px 12px; font-size: 11px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-export-config { background: #8b5cf6; color: white; }
+        .btn-import-config { background: #f59e0b; color: white; }
+        .btn-excel { background: #16a34a; color: white; }
+        .btn-excel:hover { background: #15803d; }
+        .btn-export-config:hover { background: #7c3aed; }
+        .btn-import-config:hover { background: #d97706; }
+        .btn-procesar-todo { background: #dc2626; color: white; }
+        .btn-procesar-todo:hover { background: #b91c1c; }
+        .btn-procesar-todo:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-detener { background: #f59e0b; color: white; }
+        .btn-detener:hover { background: #d97706; }
+        .btn-detener:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .panel-incompatibles { background: #fff7ed; border: 2px solid #fed7aa; border-radius: 8px; padding: 14px; margin-top: 8px; }
+        .panel-incompatibles h4 { margin: 0 0 8px 0; color: #c2410c; font-size: 15px; font-weight: bold; }
+        .incompatible-item { background: #fee2e2; border-radius: 4px; padding: 7px 12px; margin-bottom: 4px; font-size: 14px; color: #991b1b; font-family: monospace; }
+        .incompatible-rango { background: #fef3c7; border-radius: 4px; padding: 7px 12px; margin-bottom: 6px; font-size: 14px; color: #92400e; font-weight: bold; }
+        .sonido-opts { display: flex; gap: 14px; align-items: center; font-size: 12px; color: #475569; margin-left: 8px; }
+        
+        .workspace { display: grid; grid-template-columns: 320px 1fr 320px; gap: 12px; height: 78vh; }
+        
+        .panel-controles { background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; overflow-y: auto; }
+        .panel-controles h4 { margin: 0 0 4px 0; color: #1e293b; font-size: 11px; }
+        .seccion-control { margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0; }
+        .seccion-control .control-group { display: flex; align-items: center; gap: 4px; margin-bottom: 2px; }
+        .seccion-control .control-group label { font-size: 10px; font-weight: 600; min-width: 20px; color: #475569; }
+        .seccion-control .control-group input[type="range"] { flex: 1; height: 4px; }
+        .seccion-control .control-group input[type="number"] { width: 55px; padding: 2px 4px; font-size: 11px; border: 1px solid #cbd5e1; border-radius: 3px; }
+        .seccion-control .control-group .val { font-size: 10px; min-width: 28px; text-align: right; color: #2563eb; font-weight: bold; }
+        
+        .visor-seccion { background: #e2e8f0; border-radius: 8px; position: relative; overflow: auto; border: 2px solid #cbd5e1; }
+        .canvas-container { position: relative; display: inline-block; }
+        #pdf-canvas { display: block; z-index: 1; }
+        #capa-guia { position: absolute; top: 0; left: 0; z-index: 2; pointer-events: none; }
+        
+        .resultado-container { background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; overflow-y: auto; }
+        .tabla-validacion { border: 2px solid #1e293b; border-radius: 6px; overflow: hidden; margin-bottom: 8px; }
+        .tabla-titulo { background: #1e293b; color: white; padding: 4px; text-align: center; font-weight: bold; font-size: 11px; margin: 0; }
+        .grid-bingo { display: grid; grid-template-columns: repeat(5, 1fr); text-align: center; background: #e2e8f0; gap: 1px; padding: 1px; }
+        .celda { background: white; padding: 6px 2px; font-size: 14px; font-weight: bold; min-height: 28px; }
+        .comodin { background: #fef08a; color: #854d0e; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+        .dato-cabecera { padding: 4px 8px; background: #f1f5f9; border-bottom: 1px solid #cbd5e1; font-weight: bold; font-size: 11px; }
+        
+        .btn-principal { background: #2563eb; color: white; border: none; padding: 6px; font-size: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 4px; }
+        .btn-principal:hover { background: #1d4ed8; }
+        .btn-secundario { background: #64748b; color: white; border: none; padding: 4px 10px; font-size: 11px; font-weight: bold; border-radius: 4px; cursor: pointer; }
+        .btn-secundario:hover { background: #475569; }
+        
+        .status { padding: 6px 12px; background: #f1f5f9; border-radius: 6px; font-weight: 500; color: #475569; margin-bottom: 6px; border-left: 4px solid #2563eb; font-size: 11px; }
+        .status.procesando { border-left-color: #f59e0b; background: #fef3c7; }
+        .status.exito { border-left-color: #16a34a; background: #dcfce7; }
+        .status.error { border-left-color: #dc2626; background: #fee2e2; }
+        
+        .navegacion { display: flex; gap: 4px; align-items: center; justify-content: center; margin: 4px 0; flex-wrap: wrap; }
+        .navegacion span { font-weight: bold; font-size: 12px; }
+        .carton-info { text-align: center; font-size: 11px; color: #475569; margin-bottom: 4px; }
+        
+        .grid-cartones { display: grid; gap: 4px; margin-top: 6px; max-height: 150px; overflow-y: auto; }
+        .grid-cartones .mini-carton { border: 1px solid #cbd5e1; border-radius: 4px; padding: 3px; cursor: pointer; font-size: 9px; }
+        .grid-cartones .mini-carton.activo { border-color: #2563eb; background: #eff6ff; }
+        .grid-cartones .mini-carton.procesado { border-color: #16a34a; background: #dcfce7; }
+        .grid-cartones .mini-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; }
+        .grid-cartones .mini-grid div { text-align: center; padding: 1px; font-size: 7px; }
+        
+        .teclas-ayuda { font-size: 10px; color: #64748b; text-align: center; margin-top: 4px; }
+        input[type="file"].hidden { display: none; }
+        
+        .progress-bar { width: 100%; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin: 4px 0; }
+        .progress-bar .fill { height: 100%; background: #2563eb; transition: width 0.3s; width: 0%; }
+        
+        .pagina-info { text-align: center; font-size: 11px; color: #64748b; margin: 2px 0; }
+        .log-container { max-height: 80px; overflow-y: auto; font-size: 12px; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; margin-top: 4px; font-family: monospace; }
+        .log-container .log-line { padding: 1px 0; border-bottom: 1px solid #e2e8f0; }
+        .log-container .log-line:last-child { border-bottom: none; }
+        .log-container .log-line.ok { color: #16a34a; }
+        .log-container .log-line.error { color: #dc2626; }
+        .log-container .log-line.info { color: #2563eb; }
+        .log-container .log-line.warning { color: #f59e0b; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <label>📄 PDF:</label>
+        <input type="file" id="pdf-input" accept="application/pdf">
+        <label>Cartones:</label>
+        <select id="cantidad-cartones">
+            <option value="4">4 Cartones</option>
+            <option value="6" selected>6 Cartones</option>
+        </select>
+        <button class="btn-small btn-excel" id="btn-exportar-excel">📊 Excel</button>
+        <button class="btn-small btn-export-config" id="btn-export-config">💾 Guardar Config</button>
+        <button class="btn-small btn-import-config" id="btn-import-config">📂 Cargar Config</button>
+        <button class="btn-small btn-procesar-todo" id="btn-procesar-todas-paginas">🚀 Procesar Todo</button>
+        <button class="btn-small btn-detener" id="btn-detener-proceso" disabled>⏹ Cancelar Proceso</button>
+        <span class="sonido-opts">
+            <label title="Sonido al terminar o al cancelar"><input type="checkbox" id="chk-sonido-fin" checked> 🔔 Fin</label>
+            <label title="Sonido por cada cartón incompatible"><input type="checkbox" id="chk-sonido-error" checked> 🔔 Error</label>
+        </span>
+        <input type="file" id="config-input" accept=".json" class="hidden">
+    </div>
+    
+    <div id="status-panel" class="status">📌 Carga un PDF con cartones de bingo para comenzar</div>
+    <div class="progress-bar"><div class="fill" id="progress-fill"></div></div>
+
+    <!-- Panel de cartones incompatibles -->
+    <div class="panel-incompatibles" id="panel-incompatibles" style="display:none;">
+        <h4>⚠️ Cartones Incompatibles Detectados</h4>
+        <div id="lista-incompatibles"></div>
+        <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+            <button class="btn-small" id="btn-excel-solo-correctos" style="background:#16a34a;color:white;">📊 Exportar Solo Correctos</button>
+            <button class="btn-small" id="btn-excel-todos" style="background:#2563eb;color:white;">📊 Exportar Todos</button>
+            <button class="btn-small" id="btn-limpiar-incompatibles" style="background:#64748b;color:white;">✕ Cerrar</button>
+        </div>
+    </div>
+    
+    <div class="workspace">
+        <div class="panel-controles">
+            <div class="navegacion">
+                <button class="btn-secundario" id="btn-anterior">◀</button>
+                <span id="carton-actual-indice">1 / 6</span>
+                <button class="btn-secundario" id="btn-siguiente">▶</button>
+                <button class="btn-secundario" id="btn-copiar-posicion" style="background:#8b5cf6;">📋 Copiar Pos</button>
+                <button class="btn-secundario" id="btn-pegar-posicion" style="background:#f59e0b;">📥 Pegar Pos</button>
+            </div>
+            <div class="pagina-info" id="pagina-info">Página: 1</div>
+            <div class="carton-info" id="carton-serie-info">N° Serie: ---</div>
+            
+            <div class="seccion-control">
+                <h4 style="color: #2563eb;">■ Cuadro N° Serie</h4>
+                <div class="control-group">
+                    <label>X:</label>
+                    <input type="range" id="serX" min="0" max="800" value="45">
+                    <input type="number" id="num-serX" class="num-input" value="45" step="0.5">
+                </div>
+                <div class="control-group">
+                    <label>Y:</label>
+                    <input type="range" id="serY" min="0" max="800" value="135">
+                    <input type="number" id="num-serY" class="num-input" value="135" step="0.5">
+                </div>
+                <div class="control-group">
+                    <label>W:</label>
+                    <input type="range" id="serW" min="50" max="400" value="150">
+                    <input type="number" id="num-serW" class="num-input" value="150" step="0.5">
+                </div>
+                <div class="control-group">
+                    <label>H:</label>
+                    <input type="range" id="serH" min="15" max="100" value="25">
+                    <input type="number" id="num-serH" class="num-input" value="25" step="0.5">
+                </div>
+            </div>
+
+            <div class="seccion-control">
+                <h4 style="color: #16a34a;">■ Cuadro B-I-N-G-O</h4>
+                <div class="control-group">
+                    <label>X:</label>
+                    <input type="range" id="binX" min="0" max="800" value="30">
+                    <input type="number" id="num-binX" class="num-input" value="30" step="0.5">
+                </div>
+                <div class="control-group">
+                    <label>Y:</label>
+                    <input type="range" id="binY" min="0" max="800" value="170">
+                    <input type="number" id="num-binY" class="num-input" value="170" step="0.5">
+                </div>
+                <div class="control-group">
+                    <label>W:</label>
+                    <input type="range" id="binW" min="100" max="500" value="230">
+                    <input type="number" id="num-binW" class="num-input" value="230" step="0.5">
+                </div>
+                <div class="control-group">
+                    <label>H:</label>
+                    <input type="range" id="binH" min="15" max="100" value="25">
+                    <input type="number" id="num-binH" class="num-input" value="25" step="0.5">
+                </div>
+            </div>
+
+            <div class="seccion-control">
+                <h4 style="color: #ef4444;">■ Cuadrícula 5x5</h4>
+                <div class="control-group">
+                    <label>X:</label>
+                    <input type="range" id="numX" min="0" max="800" value="30">
+                    <input type="number" id="num-numX" class="num-input" value="30" step="0.5">
+                </div>
+                <div class="control-group">
+                    <label>Y:</label>
+                    <input type="range" id="numY" min="0" max="800" value="195">
+                    <input type="number" id="num-numY" class="num-input" value="195" step="0.5">
+                </div>
+                <div class="control-group">
+                    <label>W:</label>
+                    <input type="range" id="numW" min="100" max="500" value="230">
+                    <input type="number" id="num-numW" class="num-input" value="230" step="0.5">
+                </div>
+                <div class="control-group">
+                    <label>H:</label>
+                    <input type="range" id="numH" min="100" max="500" value="225">
+                    <input type="number" id="num-numH" class="num-input" value="225" step="0.5">
+                </div>
+            </div>
+
+            <button class="btn-principal" id="btn-ocr-probar">🔍 Escanear Cartón Actual</button>
+            <button class="btn-principal" id="btn-escanear-todos" style="background:#7c3aed;">📋 Escanear Todos</button>
+            
+            <div class="teclas-ayuda">
+                ⬆⬇⬅➡ Mover selección | Flechas + Shift para ajuste fino<br>
+                Click + Arrastrar para mover cuadros
+            </div>
+            
+            <div class="log-container" id="log-container"></div>
+        </div>
+
+        <div class="visor-seccion">
+            <div class="canvas-container">
+                <canvas id="pdf-canvas"></canvas>
+                <canvas id="capa-guia"></canvas>
+            </div>
+        </div>
+
+        <div class="resultado-container">
+            <div class="tabla-validacion">
+                <p class="tabla-titulo" id="carton-titulo">CARTÓN #1</p>
+                <div class="dato-cabecera" id="res-serie">N° Serie: -</div>
+                <div class="dato-cabecera" id="res-bingo">Cabecera: -</div>
+                <div class="grid-bingo" id="grid-resultado">
+                    <div class="celda">-</div><div class="celda">-</div><div class="celda">-</div><div class="celda">-</div><div class="celda">-</div>
+                    <div class="celda">-</div><div class="celda">-</div><div class="celda">-</div><div class="celda">-</div><div class="celda">-</div>
+                    <div class="celda">-</div><div class="celda">-</div><div class="celda comodin">VC</div><div class="celda">-</div><div class="celda">-</div>
+                    <div class="celda">-</div><div class="celda">-</div><div class="celda">-</div><div class="celda">-</div><div class="celda">-</div>
+                    <div class="celda">-</div><div class="celda">-</div><div class="celda">-</div><div class="celda">-</div><div class="celda">-</div>
+                </div>
+            </div>
+            
+            <div style="border-top:1px solid #e2e8f0; padding-top:6px;">
+                <div id="lista-cartones-mini"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Configurar PDF.js
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+    // --- Audio usando Web Audio API ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function sonarFin() {
+        if (!document.getElementById('chk-sonido-fin').checked) return;
+        // Melodía de 3 notas: Do-Mi-Sol (victoria)
+        const notas = [523.25, 659.25, 783.99];
+        notas.forEach((freq, i) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime + i * 0.18);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.18 + 0.35);
+            osc.start(audioCtx.currentTime + i * 0.18);
+            osc.stop(audioCtx.currentTime + i * 0.18 + 0.35);
+        });
+    }
+
+    function sonarDetenido() {
+        if (!document.getElementById('chk-sonido-fin').checked) return;
+        // Bajada descendente: Sol-Mi-Do (cancelación)
+        const notas = [783.99, 659.25, 392.00];
+        notas.forEach((freq, i) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.25, audioCtx.currentTime + i * 0.15);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.15 + 0.3);
+            osc.start(audioCtx.currentTime + i * 0.15);
+            osc.stop(audioCtx.currentTime + i * 0.15 + 0.3);
+        });
+    }
+
+    function sonarIncompatible() {
+        if (!document.getElementById('chk-sonido-error').checked) return;
+        // Beep corto y agudo (alerta)
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.type = 'square';
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.18);
+        osc.start(audioCtx.currentTime);
+        osc.stop(audioCtx.currentTime + 0.18);
+    }
+
+    // --- Detección de cartón compatible ---
+    function esCartonCompatible(resultado) {
+        if (!resultado) return false;
+        // El cartón es compatible si tiene BINGO detectado (B/I/N/G/O) y al menos 60% de celdas con números
+        const bingo = (resultado.bingo || '').toUpperCase();
+        const tieneBingo = /[BINGO]{3,}/.test(bingo);
+        let celdasConNumero = 0;
+        for (let f = 0; f < 5; f++) {
+            for (let c = 0; c < 5; c++) {
+                if (f === 2 && c === 2) continue; // celda central no cuenta
+                const v = resultado.numeros?.[f]?.[c] || '';
+                if (v !== '' && !isNaN(parseInt(v))) celdasConNumero++;
+            }
+        }
+        return tieneBingo && celdasConNumero >= 15; // al menos 15 de 24 celdas con número
+    }
+
+    // Variables para rastrear incompatibles
+    let incompatiblesGlobal = [];
+    let detenerProceso = false;
+
+    // --- Función para procesar el valor central ---
+    function procesarValorCentral(valor) {
+        if (!valor || valor.trim() === '') {
+            return '76';
+        }
+        
+        const limpio = valor.trim().toUpperCase();
+        
+        // Si es "VC" o cualquier letra (no es número)
+        if (isNaN(limpio) || limpio.includes('VC') || limpio.includes('V') || limpio.includes('C')) {
+            return '76';
+        }
+        
+        // Intentar convertir a número
+        const num = parseInt(limpio);
+        if (isNaN(num)) {
+            return '76';
+        }
+        
+        // Si es un número del 31 al 45, mantenerlo
+        if (num >= 31 && num <= 45) {
+            return num.toString();
+        }
+        
+        // Cualquier otro caso (0, <31, >45) → 76
+        return '76';
+    }
+
+    // --- Estado ---
+    let currentPdf = null;
+    let totalCartones = 6;
+    let cartonActual = 0;
+    let paginaActual = 1;
+    let totalPaginas = 0;
+    let escalaActual = 5;
+    let dragging = null;
+    let dragStartX = 0, dragStartY = 0;
+    let posicionCopiada = null;
+    let pdfCargado = false;
+    let procesando = false;
+    let datosGlobales = {};
+    let totalCartonesProcesados = 0;
+
+    // Referencias a elementos DOM
+    const pdfCanvas = document.getElementById('pdf-canvas');
+    const pdfCtx = pdfCanvas.getContext('2d');
+    const guiaCanvas = document.getElementById('capa-guia');
+    const guiaCtx = guiaCanvas.getContext('2d');
+    const statusPanel = document.getElementById('status-panel');
+    const progressFill = document.getElementById('progress-fill');
+    const logContainer = document.getElementById('log-container');
+
+    // Estructura para guardar configuración por cartón
+    class ConfiguracionCarton {
+        constructor() {
+            this.ser = { x: 45, y: 135, w: 150, h: 25 };
+            this.bin = { x: 30, y: 170, w: 230, h: 25 };
+            this.num = { x: 30, y: 195, w: 230, h: 225 };
+            this.offsetX = 0;
+            this.offsetY = 0;
+        }
+    }
+
+    let configs = [];
+    let datosCartones = [];
+
+    // Inicializar
+    function inicializarCartones(cantidad) {
+        configs = [];
+        datosCartones = [];
+        for(let i = 0; i < cantidad; i++) {
+            configs.push(new ConfiguracionCarton());
+            datosCartones.push({ serie: '', bingo: '', numeros: Array(5).fill().map(() => Array(5).fill('')) });
+        }
+    }
+
+    // Obtener configuración actual del slider
+    function getConfigActual() {
+        const conf = new ConfiguracionCarton();
+        conf.ser.x = parseFloat(document.getElementById('serX').value) || 45;
+        conf.ser.y = parseFloat(document.getElementById('serY').value) || 135;
+        conf.ser.w = parseFloat(document.getElementById('serW').value) || 150;
+        conf.ser.h = parseFloat(document.getElementById('serH').value) || 25;
+        conf.bin.x = parseFloat(document.getElementById('binX').value) || 30;
+        conf.bin.y = parseFloat(document.getElementById('binY').value) || 170;
+        conf.bin.w = parseFloat(document.getElementById('binW').value) || 230;
+        conf.bin.h = parseFloat(document.getElementById('binH').value) || 25;
+        conf.num.x = parseFloat(document.getElementById('numX').value) || 30;
+        conf.num.y = parseFloat(document.getElementById('numY').value) || 195;
+        conf.num.w = parseFloat(document.getElementById('numW').value) || 230;
+        conf.num.h = parseFloat(document.getElementById('numH').value) || 225;
+        conf.offsetX = configs[cartonActual]?.offsetX || 0;
+        conf.offsetY = configs[cartonActual]?.offsetY || 0;
+        return conf;
+    }
+
+    // Aplicar configuración a los sliders y números
+    function aplicarConfig(conf) {
+        const ids = ['serX', 'serY', 'serW', 'serH', 'binX', 'binY', 'binW', 'binH', 'numX', 'numY', 'numW', 'numH'];
+        ids.forEach(id => {
+            const parts = id.match(/(ser|bin|num)(X|Y|W|H)/);
+            if(parts) {
+                const grupo = parts[1];
+                const coord = parts[2];
+                const val = conf[grupo][coord.toLowerCase()];
+                document.getElementById(id).value = val;
+                document.getElementById(`num-${id}`).value = val;
+            }
+        });
+    }
+
+    // Guardar configuración actual para el cartón actual
+    function guardarConfigActual() {
+        if(configs[cartonActual]) {
+            configs[cartonActual] = getConfigActual();
+        }
+    }
+
+    // Cargar configuración del cartón actual
+    function cargarConfigActual() {
+        if(configs[cartonActual]) {
+            aplicarConfig(configs[cartonActual]);
+            if(pdfCargado) actualizarGuiaVisual();
+        }
+    }
+
+    // Sincronizar sliders con inputs numéricos
+    function sincronizarInputs() {
+        const ids = ['serX', 'serY', 'serW', 'serH', 'binX', 'binY', 'binW', 'binH', 'numX', 'numY', 'numW', 'numH'];
+        ids.forEach(id => {
+            const slider = document.getElementById(id);
+            const numInput = document.getElementById(`num-${id}`);
+            if(slider && numInput) {
+                slider.addEventListener('input', () => {
+                    numInput.value = slider.value;
+                    if(pdfCargado) {
+                        guardarConfigActual();
+                        actualizarGuiaVisual();
+                    }
+                });
+                numInput.addEventListener('input', () => {
+                    let val = parseFloat(numInput.value);
+                    if(!isNaN(val)) {
+                        val = Math.max(0, Math.min(parseFloat(slider.max), val));
+                        slider.value = val;
+                        if(pdfCargado) {
+                            guardarConfigActual();
+                            actualizarGuiaVisual();
+                        }
+                    }
+                });
+                numInput.addEventListener('change', () => {
+                    let val = parseFloat(numInput.value);
+                    if(isNaN(val)) val = 0;
+                    val = Math.max(0, Math.min(parseFloat(slider.max), val));
+                    slider.value = val;
+                    numInput.value = val;
+                    if(pdfCargado) {
+                        guardarConfigActual();
+                        actualizarGuiaVisual();
+                    }
+                });
+            }
+        });
+    }
+
+    // --- Eventos ---
+    document.getElementById('cantidad-cartones').addEventListener('change', (e) => {
+        totalCartones = parseInt(e.target.value);
+        inicializarCartones(totalCartones);
+        cartonActual = 0;
+        actualizarNavegacion();
+        if(pdfCargado) renderizarPagina();
+    });
+
+    // Carga de PDF
+    document.getElementById('pdf-input').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) {
+            statusPanel.innerText = "⚠️ No se seleccionó ningún archivo.";
+            return;
+        }
+        
+        statusPanel.innerText = "📄 Cargando PDF: " + file.name;
+        statusPanel.className = 'status procesando';
+        
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdfData = new Uint8Array(arrayBuffer);
+            currentPdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+            
+            totalPaginas = currentPdf.numPages;
+            pdfCargado = true;
+            paginaActual = 1;
+            inicializarCartones(totalCartones);
+            cartonActual = 0;
+            datosGlobales = {};
+            totalCartonesProcesados = 0;
+            
+            statusPanel.innerText = `✅ PDF Cargado correctamente. ${totalPaginas} páginas encontradas.`;
+            statusPanel.className = 'status exito';
+            await renderizarPagina();
+            actualizarNavegacion();
+            
+        } catch(err) {
+            console.error('Error al cargar PDF:', err);
+            statusPanel.innerText = "❌ Error al cargar el archivo PDF. Asegúrate de que sea un PDF válido.";
+            statusPanel.className = 'status error';
+            pdfCargado = false;
+        }
+    });
+
+    // Zoom
+    const zoomHTML = `<div class="seccion-control"><h4>🔍 Zoom</h4><div class="control-group"><label>Escala:</label><input type="range" id="pdfScale" min="2" max="15" value="5"><input type="number" id="num-pdfScale" class="num-input" value="5" min="2" max="15" step="0.5"></div></div>`;
+    document.querySelector('.panel-controles').insertAdjacentHTML('afterbegin', zoomHTML);
+    
+    document.getElementById('pdfScale').addEventListener('input', () => {
+        document.getElementById('num-pdfScale').value = document.getElementById('pdfScale').value;
+        if(pdfCargado) renderizarPagina();
+    });
+    document.getElementById('num-pdfScale').addEventListener('change', () => {
+        let val = parseFloat(document.getElementById('num-pdfScale').value);
+        if(!isNaN(val)) {
+            val = Math.max(2, Math.min(15, val));
+            document.getElementById('pdfScale').value = val;
+            document.getElementById('num-pdfScale').value = val;
+            if(pdfCargado) renderizarPagina();
+        }
+    });
+
+    sincronizarInputs();
+
+    // --- Navegación ---
+    function actualizarNavegacion() {
+        document.getElementById('carton-actual-indice').textContent = `${cartonActual + 1} / ${totalCartones}`;
+        document.getElementById('pagina-info').textContent = `Página: ${paginaActual} / ${totalPaginas}`;
+        const data = datosCartones[cartonActual] || { serie: '---' };
+        document.getElementById('carton-serie-info').textContent = `N° Serie: ${data.serie || '---'}`;
+        document.getElementById('carton-titulo').textContent = `CARTÓN #${cartonActual + 1}`;
+        
+        if(configs[cartonActual]) {
+            cargarConfigActual();
+        }
+        
+        actualizarGridResultado();
+        actualizarMiniCartones();
+        if(pdfCargado) actualizarGuiaVisual();
+    }
+
+    document.getElementById('btn-anterior').addEventListener('click', () => {
+        guardarConfigActual();
+        if(cartonActual > 0) { 
+            cartonActual--; 
+            cargarConfigActual(); 
+            actualizarNavegacion(); 
+        }
+    });
+    
+    document.getElementById('btn-siguiente').addEventListener('click', () => {
+        guardarConfigActual();
+        if(cartonActual < totalCartones - 1) { 
+            cartonActual++; 
+            cargarConfigActual(); 
+            actualizarNavegacion(); 
+        }
+    });
+
+    document.getElementById('btn-copiar-posicion').addEventListener('click', () => {
+        posicionCopiada = getConfigActual();
+        statusPanel.innerText = `📋 Posición copiada del Cartón #${cartonActual + 1}`;
+        statusPanel.className = 'status';
+    });
+
+    document.getElementById('btn-pegar-posicion').addEventListener('click', () => {
+        if(posicionCopiada) {
+            aplicarConfig(posicionCopiada);
+            guardarConfigActual();
+            if(pdfCargado) actualizarGuiaVisual();
+            statusPanel.innerText = `📥 Posición pegada al Cartón #${cartonActual + 1}`;
+            statusPanel.className = 'status';
+        } else {
+            statusPanel.innerText = '⚠️ No hay posición copiada. Usa "Copiar Pos" primero.';
+            statusPanel.className = 'status error';
+        }
+    });
+
+    // --- Teclado ---
+    document.addEventListener('keydown', (e) => {
+        if(!pdfCargado || procesando) return;
+        const shift = e.shiftKey;
+        const paso = shift ? 0.5 : 2;
+        
+        if(e.key === 'ArrowLeft' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+            e.preventDefault();
+            guardarConfigActual();
+            if(cartonActual > 0) { cartonActual--; cargarConfigActual(); actualizarNavegacion(); }
+            return;
+        }
+        if(e.key === 'ArrowRight' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+            e.preventDefault();
+            guardarConfigActual();
+            if(cartonActual < totalCartones - 1) { cartonActual++; cargarConfigActual(); actualizarNavegacion(); }
+            return;
+        }
+        
+        let grupo = null;
+        if(e.altKey && e.shiftKey) grupo = 'num';
+        else if(e.altKey) grupo = 'ser';
+        else if(e.shiftKey) grupo = 'bin';
+        else return;
+        
+        e.preventDefault();
+        let ids = [];
+        if(grupo === 'ser') ids = ['serX', 'serY'];
+        else if(grupo === 'bin') ids = ['binX', 'binY'];
+        else if(grupo === 'num') ids = ['numX', 'numY'];
+        
+        ids.forEach(id => {
+            const slider = document.getElementById(id);
+            const numInput = document.getElementById(`num-${id}`);
+            let val = parseFloat(slider.value);
+            if(e.key === 'ArrowUp') val -= paso;
+            else if(e.key === 'ArrowDown') val += paso;
+            else if(e.key === 'ArrowLeft') {
+                if(id.includes('X')) val -= paso;
+                else if(id.includes('Y')) val -= paso;
+            } else if(e.key === 'ArrowRight') {
+                if(id.includes('X')) val += paso;
+                else if(id.includes('Y')) val += paso;
+            }
+            val = Math.max(0, Math.min(parseFloat(slider.max), val));
+            slider.value = val;
+            numInput.value = val;
+        });
+        
+        guardarConfigActual();
+        if(pdfCargado) actualizarGuiaVisual();
+    });
+
+    // --- Renderizado ---
+    async function renderizarPagina(pagina = paginaActual) {
+        if(!currentPdf) return;
+        try {
+            const page = await currentPdf.getPage(pagina);
+            escalaActual = parseFloat(document.getElementById('pdfScale').value) / 10;
+            const viewport = page.getViewport({ scale: escalaActual, rotation: 0 });
+            
+            pdfCanvas.width = guiaCanvas.width = viewport.width;
+            pdfCanvas.height = guiaCanvas.height = viewport.height;
+            
+            document.querySelectorAll('input[type="range"]').forEach(el => {
+                if(el.id.includes('X') || el.id.includes('W')) el.max = viewport.width;
+                if(el.id.includes('Y') || el.id.includes('H')) el.max = viewport.height;
+                const numEl = document.getElementById(`num-${el.id}`);
+                if(numEl) numEl.max = el.max;
+            });
+
+            await page.render({ canvasContext: pdfCtx, viewport: viewport }).promise;
+            actualizarGuiaVisual();
+        } catch(err) {
+            console.error('Error al renderizar página:', err);
+            statusPanel.innerText = "❌ Error al renderizar el PDF.";
+            statusPanel.className = 'status error';
+        }
+    }
+
+    function actualizarGuiaVisual() {
+        if(!pdfCargado) return;
+        guiaCtx.clearRect(0, 0, guiaCanvas.width, guiaCanvas.height);
+        
+        const conf = configs[cartonActual] || new ConfiguracionCarton();
+        
+        const sx = conf.ser.x + conf.offsetX;
+        const sy = conf.ser.y + conf.offsetY;
+        guiaCtx.strokeStyle = "#2563eb"; 
+        guiaCtx.lineWidth = 2.5;
+        guiaCtx.strokeRect(sx, sy, conf.ser.w, conf.ser.h);
+        guiaCtx.fillStyle = "rgba(37, 99, 235, 0.15)";
+        guiaCtx.fillRect(sx, sy, conf.ser.w, conf.ser.h);
+
+        const bx = conf.bin.x + conf.offsetX;
+        const by = conf.bin.y + conf.offsetY;
+        guiaCtx.strokeStyle = "#16a34a"; 
+        guiaCtx.lineWidth = 2.5;
+        guiaCtx.strokeRect(bx, by, conf.bin.w, conf.bin.h);
+        guiaCtx.fillStyle = "rgba(22, 163, 74, 0.15)";
+        guiaCtx.fillRect(bx, by, conf.bin.w, conf.bin.h);
+
+        const nx = conf.num.x + conf.offsetX;
+        const ny = conf.num.y + conf.offsetY;
+        guiaCtx.strokeStyle = "#ef4444"; 
+        guiaCtx.lineWidth = 2.5;
+        guiaCtx.strokeRect(nx, ny, conf.num.w, conf.num.h);
+        guiaCtx.fillStyle = "rgba(239, 68, 68, 0.08)";
+        guiaCtx.fillRect(nx, ny, conf.num.w, conf.num.h);
+        
+        guiaCtx.strokeStyle = "rgba(234, 179, 8, 0.4)";
+        guiaCtx.lineWidth = 1;
+        let cw = conf.num.w / 5; 
+        let ch = conf.num.h / 5;
+        for(let i=1; i<5; i++) {
+            guiaCtx.beginPath(); 
+            guiaCtx.moveTo(nx + (i*cw), ny); 
+            guiaCtx.lineTo(nx + (i*cw), ny + conf.num.h); 
+            guiaCtx.stroke();
+            guiaCtx.beginPath(); 
+            guiaCtx.moveTo(nx, ny + (i*ch)); 
+            guiaCtx.lineTo(nx + conf.num.w, ny + (i*ch)); 
+            guiaCtx.stroke();
+        }
+        
+        guiaCtx.fillStyle = "#2563eb";
+        guiaCtx.font = "bold 10px Arial";
+        guiaCtx.fillText("SERIE", sx, sy - 5);
+        guiaCtx.fillStyle = "#16a34a";
+        guiaCtx.fillText("BINGO", bx, by - 5);
+        guiaCtx.fillStyle = "#ef4444";
+        guiaCtx.fillText("NUMEROS", nx, ny - 5);
+    }
+
+    // --- Renderizar una página PDF a canvas (UNA sola vez por página) ---
+    async function renderizarPaginaACanvas(numeroPagina) {
+        const page = await currentPdf.getPage(numeroPagina);
+        const viewport = page.getViewport({ scale: escalaActual, rotation: 0 });
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext('2d');
+        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+        return canvas;
+    }
+
+    // --- OCR de un cartón usando canvas ya renderizado y worker reutilizable ---
+    async function escanearCartonDesdeCanvas(index, pageCanvas, conf, worker) {
+        try {
+            // Serie
+            const sx = conf.ser.x + conf.offsetX;
+            const sy = conf.ser.y + conf.offsetY;
+            let cSerie = crearRecorte(pageCanvas, sx, sy, conf.ser.w, conf.ser.h);
+            await worker.setParameters({ tessedit_char_whitelist: '0123456789TABLANo. ' });
+            const resSer = await worker.recognize(cSerie);
+            const serie = resSer.data.text.trim() || '';
+            cSerie.width = 0; cSerie.height = 0;
+
+            // BINGO
+            const bx = conf.bin.x + conf.offsetX;
+            const by = conf.bin.y + conf.offsetY;
+            let cBingo = crearRecorte(pageCanvas, bx, by, conf.bin.w, conf.bin.h);
+            await worker.setParameters({ tessedit_char_whitelist: 'BINGO' });
+            const resBin = await worker.recognize(cBingo);
+            const bingo = resBin.data.text.trim() || '';
+            cBingo.width = 0; cBingo.height = 0;
+
+            // Números 5x5
+            const nx = conf.num.x + conf.offsetX;
+            const ny = conf.num.y + conf.offsetY;
+            const cw = conf.num.w / 5;
+            const ch = conf.num.h / 5;
+            await worker.setParameters({ tessedit_char_whitelist: '0123456789' });
+            const numeros = [];
+            for (let fila = 0; fila < 5; fila++) {
+                numeros[fila] = [];
+                for (let col = 0; col < 5; col++) {
+                    let cCelda = crearRecorte(pageCanvas, nx + (col * cw), ny + (fila * ch), cw, ch);
+                    const { data: { text } } = await worker.recognize(cCelda);
+                    let valor = text.trim() || '';
+                    if (fila === 2 && col === 2) valor = procesarValorCentral(valor);
+                    cCelda.width = 0; cCelda.height = 0;
+                    numeros[fila][col] = valor;
+                }
+            }
+            return { serie, bingo, numeros };
+        } catch(err) {
+            console.error(`Error en OCR cartón ${index+1}:`, err);
+            return null;
+        }
+    }
+
+    // --- OCR optimizado (sin renderizar UI) --- LEGACY - ya no se usa en procesamiento masivo
+    async function escanearCartonRapido(index, pagina, conf) {
+        let tempCanvas = null;
+        let worker = null;
+        try {
+            const page = await currentPdf.getPage(pagina);
+            const viewport = page.getViewport({ scale: escalaActual, rotation: 0 });
+            
+            // Renderizar solo para OCR (sin mostrar en UI)
+            tempCanvas = document.createElement('canvas');
+            tempCanvas.width = viewport.width;
+            tempCanvas.height = viewport.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            await page.render({ canvasContext: tempCtx, viewport: viewport }).promise;
+            
+            worker = await Tesseract.createWorker('eng');
+            
+            // Serie
+            const sx = conf.ser.x + conf.offsetX;
+            const sy = conf.ser.y + conf.offsetY;
+            let cSerie = crearRecorte(tempCanvas, sx, sy, conf.ser.w, conf.ser.h);
+            await worker.setParameters({ tessedit_char_whitelist: '0123456789TABLANo. ' });
+            const resSer = await worker.recognize(cSerie);
+            const serie = resSer.data.text.trim() || '';
+            cSerie.width = 0; cSerie.height = 0; // Liberar canvas
+
+            // BINGO
+            const bx = conf.bin.x + conf.offsetX;
+            const by = conf.bin.y + conf.offsetY;
+            let cBingo = crearRecorte(tempCanvas, bx, by, conf.bin.w, conf.bin.h);
+            await worker.setParameters({ tessedit_char_whitelist: 'BINGO' });
+            const resBin = await worker.recognize(cBingo);
+            const bingo = resBin.data.text.trim() || '';
+            cBingo.width = 0; cBingo.height = 0; // Liberar canvas
+
+            // Números
+            const nx = conf.num.x + conf.offsetX;
+            const ny = conf.num.y + conf.offsetY;
+            let cw = conf.num.w / 5; 
+            let ch = conf.num.h / 5;
+            
+            await worker.setParameters({ tessedit_char_whitelist: '0123456789' });
+            const numeros = [];
+            for (let fila = 0; fila < 5; fila++) {
+                numeros[fila] = [];
+                for (let col = 0; col < 5; col++) {
+                    let valor = '';
+                    let cCelda = crearRecorte(tempCanvas, nx + (col * cw), ny + (fila * ch), cw, ch);
+                    if (fila === 2 && col === 2) {
+                        // Celda central: aplicar lógica especial
+                        const { data: { text } } = await worker.recognize(cCelda);
+                        valor = text.trim() || '';
+                        valor = procesarValorCentral(valor);
+                    } else {
+                        const { data: { text } } = await worker.recognize(cCelda);
+                        valor = text.trim() || '';
+                    }
+                    cCelda.width = 0; cCelda.height = 0; // Liberar canvas
+                    numeros[fila][col] = valor;
+                }
+            }
+            
+            await worker.terminate();
+            worker = null;
+            // Liberar canvas temporal de la página
+            tempCanvas.width = 0;
+            tempCanvas.height = 0;
+            tempCanvas = null;
+            return { serie, bingo, numeros };
+        } catch(err) {
+            console.error(`Error en OCR cartón ${index+1}:`, err);
+            if(worker) { try { await worker.terminate(); } catch(e) {} worker = null; }
+            if(tempCanvas) { tempCanvas.width = 0; tempCanvas.height = 0; tempCanvas = null; }
+            return null;
+        }
+    }
+
+    function crearRecorte(origen, x, y, w, h) {
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = Math.max(1, w * 2.5); 
+        tempCanvas.height = Math.max(1, h * 2.5);
+        const ctx = tempCanvas.getContext('2d');
+        ctx.drawImage(origen, x, y, w, h, 0, 0, tempCanvas.width, tempCanvas.height);
+        return tempCanvas;
+    }
+
+    // ============================================================
+    // POOL DE WORKERS PARALELOS — usa el 80% de núcleos disponibles
+    // ============================================================
+
+    // Determinar cuántos workers usar (80% de núcleos, mínimo 2, máximo 16)
+    const NUCLEOS_TOTALES = navigator.hardwareConcurrency || 4;
+    const MAX_WORKERS = Math.max(2, Math.min(16, Math.floor(NUCLEOS_TOTALES * 0.8)));
+
+    // Indicador de workers en uso (se añade al header dinámicamente)
+    (function agregarIndicadorWorkers() {
+        const span = document.createElement('span');
+        span.id = 'workers-info';
+        span.style.cssText = 'font-size:11px;color:#64748b;background:#f1f5f9;padding:3px 8px;border-radius:4px;border:1px solid #e2e8f0;';
+        span.title = `Tu CPU tiene ${NUCLEOS_TOTALES} núcleos. Se usarán ${MAX_WORKERS} workers (80%) para OCR paralelo, dejando ${NUCLEOS_TOTALES - MAX_WORKERS} núcleos libres para el sistema.`;
+        span.innerHTML = `⚡ ${MAX_WORKERS} workers / ${NUCLEOS_TOTALES} núcleos`;
+        document.querySelector('.header').appendChild(span);
+    })();
+
+    // Función para procesar un cartón con un worker específico del pool
+    async function escanearCartonConWorkerPool(workerIdx, poolWorkers, pageCanvas, cartonIdx, conf) {
+        const worker = poolWorkers[workerIdx];
+        return await escanearCartonDesdeCanvas(cartonIdx, pageCanvas, conf, worker);
+    }
+
+    // Procesar una página completa usando el pool de workers en paralelo
+    async function procesarPaginaConPool(numeroPagina, poolWorkers) {
+        let pageCanvas = null;
+        try {
+            pageCanvas = await renderizarPaginaACanvas(numeroPagina);
+        } catch(renderErr) {
+            return null; // error de renderizado
+        }
+
+        // Dividir cartones entre workers disponibles y procesarlos en paralelo
+        const tareasCartones = [];
+        for(let c = 0; c < totalCartones; c++) {
+            if(detenerProceso) break;
+            const workerIdx = c % poolWorkers.length;
+            tareasCartones.push({ cartonIdx: c, workerIdx, conf: configs[c] });
+        }
+
+        // Lanzar todas las tareas en paralelo (cada worker hace la suya)
+        const promesas = tareasCartones.map(({ cartonIdx, workerIdx, conf }) =>
+            escanearCartonConWorkerPool(workerIdx, poolWorkers, pageCanvas, cartonIdx, conf)
+                .then(res => ({ cartonIdx, resultado: res }))
+        );
+
+        const resultados = await Promise.all(promesas);
+
+        // Liberar canvas de la página
+        pageCanvas.width = 0;
+        pageCanvas.height = 0;
+        pageCanvas = null;
+
+        return resultados;
+    }
+
+    // --- Procesar todas las páginas (MODO PARALELO — pool de workers) ---
+    document.getElementById('btn-procesar-todas-paginas').addEventListener('click', async () => {
+        if(!pdfCargado) {
+            statusPanel.innerText = "⚠️ Primero carga un PDF.";
+            statusPanel.className = 'status error';
+            return;
+        }
+        
+        if(procesando) {
+            statusPanel.innerText = "⏳ Ya hay un proceso en ejecución...";
+            return;
+        }
+        
+        procesando = true;
+        detenerProceso = false;
+        incompatiblesGlobal = [];
+        document.getElementById('btn-procesar-todas-paginas').disabled = true;
+        document.getElementById('btn-detener-proceso').disabled = false;
+        document.getElementById('btn-detener-proceso').textContent = '⏹ Cancelar Proceso';
+        document.getElementById('panel-incompatibles').style.display = 'none';
+        document.getElementById('lista-incompatibles').innerHTML = '';
+        logContainer.innerHTML = '';
+        datosGlobales = {};
+        totalCartonesProcesados = 0;
+
+        // Cuántos workers paralelos usar (uno por cartón si hay suficientes núcleos, si no, los que haya)
+        const workersAUsar = Math.min(MAX_WORKERS, totalCartones);
+        
+        statusPanel.innerText = `🚀 Iniciando procesamiento PARALELO con ${workersAUsar} workers (${NUCLEOS_TOTALES} núcleos detectados)...`;
+        statusPanel.className = 'status procesando';
+
+        // Log inicial
+        const logInit = document.createElement('div');
+        logInit.className = 'log-line info';
+        logInit.textContent = `⚡ Creando pool de ${workersAUsar} workers OCR en paralelo...`;
+        logContainer.appendChild(logInit);
+
+        let poolWorkers = [];
+        let paginaDetenida = 0;
+
+        try {
+            // Crear todos los workers del pool en paralelo (mucho más rápido que secuencial)
+            statusPanel.innerText = `⚙️ Iniciando ${workersAUsar} motores OCR en paralelo...`;
+            poolWorkers = await Promise.all(
+                Array.from({ length: workersAUsar }, () => Tesseract.createWorker('eng'))
+            );
+
+            logInit.textContent = `⚡ Pool listo: ${workersAUsar} workers OCR activos (80% de ${NUCLEOS_TOTALES} núcleos).`;
+            logInit.className = 'log-line ok';
+
+            for(let p = 1; p <= totalPaginas; p++) {
+                if(detenerProceso) { paginaDetenida = p; break; }
+
+                const progreso = Math.round((p / totalPaginas) * 100);
+                progressFill.style.width = `${progreso}%`;
+                statusPanel.innerText = `⚡ Procesando página ${p}/${totalPaginas} (${progreso}%) — ${workersAUsar} cartones en paralelo...`;
+                
+                const logLine = document.createElement('div');
+                logLine.className = 'log-line info';
+                logLine.textContent = `📄 Página ${p}/${totalPaginas} — escaneando ${totalCartones} cartones con ${workersAUsar} workers...`;
+                logContainer.appendChild(logLine);
+                logContainer.scrollTop = logContainer.scrollHeight;
+
+                // Procesar TODOS los cartones de la página en paralelo
+                const resultados = await procesarPaginaConPool(p, poolWorkers);
+
+                if(!resultados) {
+                    logLine.textContent = `❌ Página ${p}: Error al renderizar`;
+                    logLine.className = 'log-line error';
+                    continue;
+                }
+
+                const datosPagina = [];
+
+                // Ordenar resultados por índice de cartón para mantener orden correcto
+                resultados.sort((a, b) => a.cartonIdx - b.cartonIdx);
+
+                for(const { cartonIdx: c, resultado } of resultados) {
+                    if(detenerProceso) break;
+                    const numHoja = (p - 1) * totalCartones + (c + 1);
+                    const compatible = esCartonCompatible(resultado);
+
+                    if(resultado) {
+                        datosPagina.push({
+                            carton: c + 1,
+                            serie: resultado.serie,
+                            bingo: resultado.bingo,
+                            numeros: resultado.numeros,
+                            compatible: compatible
+                        });
+                        totalCartonesProcesados++;
+                        
+                        if (!compatible) {
+                            sonarIncompatible();
+                            incompatiblesGlobal.push({ pagina: p, carton: c + 1, hoja: numHoja });
+                            const logCarton = document.createElement('div');
+                            logCarton.className = 'log-line warning';
+                            logCarton.textContent = `  ⚠️ Cartón ${c+1} (Hoja ${numHoja}): INCOMPATIBLE — Pág ${p}`;
+                            logContainer.appendChild(logCarton);
+                        } else {
+                            const logCarton = document.createElement('div');
+                            logCarton.className = 'log-line ok';
+                            logCarton.textContent = `  ✅ Cartón ${c+1}: ${resultado.serie || 'Sin serie'} (Central: ${resultado.numeros[2][2]})`;
+                            logContainer.appendChild(logCarton);
+                        }
+                        logContainer.scrollTop = logContainer.scrollHeight;
+                    } else {
+                        sonarIncompatible();
+                        incompatiblesGlobal.push({ pagina: p, carton: c + 1, hoja: numHoja });
+                        const logError = document.createElement('div');
+                        logError.className = 'log-line error';
+                        logError.textContent = `  ❌ Cartón ${c+1} (Hoja ${numHoja}): Error OCR — Pág ${p}`;
+                        logContainer.appendChild(logError);
+                        logContainer.scrollTop = logContainer.scrollHeight;
+                    }
+                }
+
+                datosGlobales[`pagina_${p}`] = datosPagina;
+
+                if(p === 1) {
+                    datosCartones = datosPagina.map(d => ({
+                        serie: d.serie,
+                        bingo: d.bingo,
+                        numeros: d.numeros
+                    }));
+                    actualizarNavegacion();
+                }
+
+                // Micro-pausa para refrescar UI entre páginas
+                await new Promise(r => setTimeout(r, 20));
+            }
+
+        } catch(err) {
+            console.error('Error en procesamiento paralelo:', err);
+            statusPanel.innerText = `❌ Error en el procesamiento: ${err.message}`;
+            statusPanel.className = 'status error';
+            const logError = document.createElement('div');
+            logError.className = 'log-line error';
+            logError.textContent = `❌ Error: ${err.message}`;
+            logContainer.appendChild(logError);
+        } finally {
+            // Terminar TODOS los workers del pool
+            await Promise.all(poolWorkers.map(w => w.terminate().catch(() => {})));
+            poolWorkers = [];
+        }
+
+        progressFill.style.width = '100%';
+
+        if (detenerProceso) {
+            sonarDetenido();
+            statusPanel.innerText = `⏹ Proceso detenido. ${totalCartonesProcesados} cartones procesados.`;
+            statusPanel.className = 'status error';
+        } else {
+            sonarFin();
+            statusPanel.innerText = `✅ Completado con ${workersAUsar} workers. ${totalCartonesProcesados} cartones en ${totalPaginas} páginas.`;
+            statusPanel.className = 'status exito';
+        }
+
+        const logFinal = document.createElement('div');
+        logFinal.className = detenerProceso ? 'log-line warning' : 'log-line ok';
+        logFinal.textContent = detenerProceso
+            ? `⏹ Detenido. ${totalCartonesProcesados} cartones procesados.`
+            : `✅ ¡Completado! ${totalCartonesProcesados} cartones — ${workersAUsar} workers paralelos usados.`;
+        logContainer.appendChild(logFinal);
+        logContainer.scrollTop = logContainer.scrollHeight;
+
+        if (incompatiblesGlobal.length > 0) {
+            mostrarPanelIncompatibles();
+        }
+
+        procesando = false;
+        detenerProceso = false;
+        document.getElementById('btn-procesar-todas-paginas').disabled = false;
+        document.getElementById('btn-detener-proceso').disabled = true;
+        document.getElementById('btn-detener-proceso').textContent = '⏹ Cancelar Proceso';
+
+        paginaActual = 1;
+        cartonActual = 0;
+        await renderizarPagina(1);
+        actualizarNavegacion();
+    });
+
+    // --- UI ---
+    function actualizarGridResultado() {
+        const data = datosCartones[cartonActual] || { serie: '', bingo: '', numeros: Array(5).fill().map(() => Array(5).fill('')) };
+        document.getElementById('res-serie').textContent = `N° Serie: ${data.serie || '-'}`;
+        document.getElementById('res-bingo').textContent = `Cabecera: ${data.bingo || '-'}`;
+        
+        const grid = document.getElementById('grid-resultado');
+        grid.innerHTML = '';
+        for(let f=0; f<5; f++) {
+            for(let c=0; c<5; c++) {
+                const val = data.numeros[f]?.[c] || '';
+                if(f === 2 && c === 2) {
+                    grid.innerHTML += `<div class="celda comodin">${val || 'VC'}</div>`;
+                } else {
+                    grid.innerHTML += `<div class="celda">${val || '-'}</div>`;
+                }
+            }
+        }
+    }
+
+    function actualizarMiniCartones() {
+        const cont = document.getElementById('lista-cartones-mini');
+        cont.innerHTML = '';
+        const cols = totalCartones === 4 ? 2 : 3;
+        cont.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+        cont.className = 'grid-cartones';
+        
+        for(let i=0; i<totalCartones; i++) {
+            const data = datosCartones[i] || { serie: '', numeros: Array(5).fill().map(() => Array(5).fill('')) };
+            const div = document.createElement('div');
+            const tieneDatos = data.serie && data.serie.length > 0;
+            div.className = `mini-carton ${i === cartonActual ? 'activo' : ''} ${tieneDatos ? 'procesado' : ''}`;
+            div.innerHTML = `<strong>#${i+1}</strong> ${data.serie || '---'}`;
+            const miniGrid = document.createElement('div');
+            miniGrid.className = 'mini-grid';
+            for(let f=0; f<5; f++) {
+                for(let c=0; c<5; c++) {
+                    const val = data.numeros[f]?.[c] || '';
+                    const cell = document.createElement('div');
+                    cell.textContent = val || '·';
+                    if(f===2 && c===2) {
+                        cell.style.background = '#fef08a';
+                        cell.style.fontWeight = 'bold';
+                    }
+                    miniGrid.appendChild(cell);
+                }
+            }
+            div.appendChild(miniGrid);
+            div.addEventListener('click', () => {
+                guardarConfigActual();
+                cartonActual = i;
+                cargarConfigActual();
+                actualizarNavegacion();
+            });
+            cont.appendChild(div);
+        }
+    }
+
+    // --- Botones OCR (modo normal) ---
+    document.getElementById('btn-ocr-probar').addEventListener('click', async () => {
+        if(!pdfCargado) {
+            statusPanel.innerText = "⚠️ Primero carga un PDF.";
+            statusPanel.className = 'status error';
+            return;
+        }
+        if(procesando) {
+            statusPanel.innerText = "⏳ Espere a que termine el proceso actual.";
+            return;
+        }
+        guardarConfigActual();
+        statusPanel.innerText = "🔍 Escaneando cartón actual...";
+        statusPanel.className = 'status procesando';
+        
+        const conf = configs[cartonActual];
+        const page = await currentPdf.getPage(paginaActual);
+        const viewport = page.getViewport({ scale: escalaActual, rotation: 0 });
+        await page.render({ canvasContext: pdfCtx, viewport: viewport }).promise;
+        
+        const worker = await Tesseract.createWorker('eng');
+        
+        const sx = conf.ser.x + conf.offsetX;
+        const sy = conf.ser.y + conf.offsetY;
+        let cSerie = crearRecorte(pdfCanvas, sx, sy, conf.ser.w, conf.ser.h);
+        await worker.setParameters({ tessedit_char_whitelist: '0123456789TABLANo. ' });
+        const resSer = await worker.recognize(cSerie);
+        datosCartones[cartonActual].serie = resSer.data.text.trim() || '';
+
+        const bx = conf.bin.x + conf.offsetX;
+        const by = conf.bin.y + conf.offsetY;
+        let cBingo = crearRecorte(pdfCanvas, bx, by, conf.bin.w, conf.bin.h);
+        await worker.setParameters({ tessedit_char_whitelist: 'BINGO' });
+        const resBin = await worker.recognize(cBingo);
+        datosCartones[cartonActual].bingo = resBin.data.text.trim() || '';
+
+        const nx = conf.num.x + conf.offsetX;
+        const ny = conf.num.y + conf.offsetY;
+        let cw = conf.num.w / 5; 
+        let ch = conf.num.h / 5;
+        
+        await worker.setParameters({ tessedit_char_whitelist: '0123456789' });
+        for (let fila = 0; fila < 5; fila++) {
+            for (let col = 0; col < 5; col++) {
+                let valor = '';
+                if (fila === 2 && col === 2) {
+                    let cCelda = crearRecorte(pdfCanvas, nx + (col * cw), ny + (fila * ch), cw, ch);
+                    const { data: { text } } = await worker.recognize(cCelda);
+                    valor = text.trim() || '';
+                    valor = procesarValorCentral(valor);
+                } else {
+                    let cCelda = crearRecorte(pdfCanvas, nx + (col * cw), ny + (fila * ch), cw, ch);
+                    const { data: { text } } = await worker.recognize(cCelda);
+                    valor = text.trim() || '';
+                }
+                datosCartones[cartonActual].numeros[fila][col] = valor;
+            }
+        }
+        
+        await worker.terminate();
+        statusPanel.innerText = "✅ Cartón escaneado correctamente.";
+        statusPanel.className = 'status exito';
+        actualizarNavegacion();
+    });
+
+    document.getElementById('btn-escanear-todos').addEventListener('click', async () => {
+        if(!pdfCargado) {
+            statusPanel.innerText = "⚠️ Primero carga un PDF.";
+            statusPanel.className = 'status error';
+            return;
+        }
+        if(procesando) {
+            statusPanel.innerText = "⏳ Espere a que termine el proceso actual.";
+            return;
+        }
+        guardarConfigActual();
+        statusPanel.innerText = "🔍 Escaneando todos los cartones de esta página...";
+        statusPanel.className = 'status procesando';
+        
+        for(let i=0; i<totalCartones; i++) {
+            cartonActual = i;
+            statusPanel.innerText = `🔍 Escaneando cartón ${i+1}/${totalCartones}...`;
+            
+            const conf = configs[i];
+            const page = await currentPdf.getPage(paginaActual);
+            const viewport = page.getViewport({ scale: escalaActual, rotation: 0 });
+            await page.render({ canvasContext: pdfCtx, viewport: viewport }).promise;
+            
+            const worker = await Tesseract.createWorker('eng');
+            
+            const sx = conf.ser.x + conf.offsetX;
+            const sy = conf.ser.y + conf.offsetY;
+            let cSerie = crearRecorte(pdfCanvas, sx, sy, conf.ser.w, conf.ser.h);
+            await worker.setParameters({ tessedit_char_whitelist: '0123456789TABLANo. ' });
+            const resSer = await worker.recognize(cSerie);
+            datosCartones[i].serie = resSer.data.text.trim() || '';
+
+            const bx = conf.bin.x + conf.offsetX;
+            const by = conf.bin.y + conf.offsetY;
+            let cBingo = crearRecorte(pdfCanvas, bx, by, conf.bin.w, conf.bin.h);
+            await worker.setParameters({ tessedit_char_whitelist: 'BINGO' });
+            const resBin = await worker.recognize(cBingo);
+            datosCartones[i].bingo = resBin.data.text.trim() || '';
+
+            const nx = conf.num.x + conf.offsetX;
+            const ny = conf.num.y + conf.offsetY;
+            let cw = conf.num.w / 5; 
+            let ch = conf.num.h / 5;
+            
+            await worker.setParameters({ tessedit_char_whitelist: '0123456789' });
+            for (let fila = 0; fila < 5; fila++) {
+                for (let col = 0; col < 5; col++) {
+                    let valor = '';
+                    if (fila === 2 && col === 2) {
+                        let cCelda = crearRecorte(pdfCanvas, nx + (col * cw), ny + (fila * ch), cw, ch);
+                        const { data: { text } } = await worker.recognize(cCelda);
+                        valor = text.trim() || '';
+                        valor = procesarValorCentral(valor);
+                    } else {
+                        let cCelda = crearRecorte(pdfCanvas, nx + (col * cw), ny + (fila * ch), cw, ch);
+                        const { data: { text } } = await worker.recognize(cCelda);
+                        valor = text.trim() || '';
+                    }
+                    datosCartones[i].numeros[fila][col] = valor;
+                }
+            }
+            
+            await worker.terminate();
+            actualizarNavegacion();
+        }
+        
+        statusPanel.innerText = `✅ ${totalCartones} cartones escaneados correctamente.`;
+        statusPanel.className = 'status exito';
+        actualizarNavegacion();
+    });
+
+    // --- Botón Detener ---
+    document.getElementById('btn-detener-proceso').addEventListener('click', () => {
+        detenerProceso = true;
+        document.getElementById('btn-detener-proceso').disabled = true;
+        document.getElementById('btn-detener-proceso').textContent = '⏳ Cancelando...';
+    });
+
+    // --- Panel de incompatibles ---
+    function mostrarPanelIncompatibles() {
+        const panel = document.getElementById('panel-incompatibles');
+        const lista = document.getElementById('lista-incompatibles');
+        lista.innerHTML = '';
+
+        // Agrupar en rangos consecutivos
+        const rangos = [];
+        let inicio = incompatiblesGlobal[0];
+        let anterior = incompatiblesGlobal[0];
+        for (let i = 1; i < incompatiblesGlobal.length; i++) {
+            const actual = incompatiblesGlobal[i];
+            if (actual.hoja === anterior.hoja + 1) {
+                anterior = actual;
+            } else {
+                rangos.push({ desde: inicio, hasta: anterior });
+                inicio = actual;
+                anterior = actual;
+            }
+        }
+        rangos.push({ desde: inicio, hasta: anterior });
+
+        // Mostrar resumen
+        const resumen = document.createElement('div');
+        resumen.className = 'incompatible-rango';
+        resumen.textContent = `Total: ${incompatiblesGlobal.length} cartón(es) incompatible(s) en ${rangos.length} rango(s)`;
+        lista.appendChild(resumen);
+
+        // Mostrar cada rango
+        rangos.forEach(r => {
+            const div = document.createElement('div');
+            div.className = 'incompatible-item';
+            if (r.desde.hoja === r.hasta.hoja) {
+                div.textContent = `⚠️ Hoja ${r.desde.hoja} — Pág ${r.desde.pagina}, Cartón ${r.desde.carton}`;
+            } else {
+                div.textContent = `⚠️ Hojas ${r.desde.hoja}–${r.hasta.hoja} — Pág ${r.desde.pagina} Cartón ${r.desde.carton} hasta Pág ${r.hasta.pagina} Cartón ${r.hasta.carton}`;
+            }
+            lista.appendChild(div);
+        });
+
+        panel.style.display = '';
+    }
+
+    document.getElementById('btn-limpiar-incompatibles').addEventListener('click', () => {
+        document.getElementById('panel-incompatibles').style.display = 'none';
+    });
+
+    // --- Exportar Solo Correctos ---
+    document.getElementById('btn-excel-solo-correctos').addEventListener('click', () => {
+        exportarExcel(true);
+    });
+
+    // --- Exportar Todos (desde panel incompatibles) ---
+    document.getElementById('btn-excel-todos').addEventListener('click', () => {
+        exportarExcel(false);
+    });
+
+    // --- Exportar Excel (función unificada) ---
+    function exportarExcel(soloCompatibles = false) {
+        const datosAExportar = Object.keys(datosGlobales).length > 0 ? datosGlobales : { 'pagina_1': datosCartones.map((d, i) => ({ carton: i+1, ...d })) };
+        const tieneDatos = Object.values(datosAExportar).some(pag => pag.length > 0);
+        
+        if(!tieneDatos) {
+            statusPanel.innerText = "⚠️ No hay datos para exportar. Escanea los cartones primero.";
+            statusPanel.className = 'status error';
+            return;
+        }
+        
+        try {
+            const wb = XLSX.utils.book_new();
+            let hojaIndex = 1;
+            let exportados = 0;
+            
+            Object.keys(datosAExportar).forEach((key) => {
+                const pagData = datosAExportar[key];
+                pagData.forEach((c) => {
+                    if (soloCompatibles && c.compatible === false) {
+                        hojaIndex++;
+                        return;
+                    }
+                    const data = [];
+                    data.push([`tabla / no ${c.serie || ''}`]);
+                    data.push(['', 'b', 'i', 'n', 'g', 'o']);
+                    for(let f = 0; f < 5; f++) {
+                        data.push(['',
+                            c.numeros?.[f]?.[0] || '', c.numeros?.[f]?.[1] || '',
+                            c.numeros?.[f]?.[2] || '', c.numeros?.[f]?.[3] || '',
+                            c.numeros?.[f]?.[4] || ''
+                        ]);
+                    }
+                    const ws = XLSX.utils.aoa_to_sheet(data);
+                    ws['!cols'] = [{wch:15}, {wch:6}, {wch:6}, {wch:6}, {wch:6}, {wch:6}];
+                    XLSX.utils.book_append_sheet(wb, ws, `Table ${hojaIndex}`);
+                    hojaIndex++;
+                    exportados++;
+                });
+            });
+            
+            const sufijo = soloCompatibles ? '_correctos' : '_todos';
+            XLSX.writeFile(wb, `cartones_bingo${sufijo}_${new Date().toISOString().slice(0,10)}.xlsx`);
+            statusPanel.innerText = `📊 Excel exportado con ${exportados} cartones${soloCompatibles ? ' (solo correctos)' : ''}.`;
+            statusPanel.className = 'status exito';
+        } catch(err) {
+            console.error('Error al exportar Excel:', err);
+            statusPanel.innerText = "❌ Error al exportar Excel.";
+            statusPanel.className = 'status error';
+        }
+    }
+
+    document.getElementById('btn-exportar-excel').addEventListener('click', () => exportarExcel(false));
+
+    // --- Exportar/Importar Configuración ---
+    document.getElementById('btn-export-config').addEventListener('click', () => {
+        guardarConfigActual();
+        try {
+            const data = {
+                version: '1.0',
+                fecha: new Date().toISOString(),
+                totalCartones: totalCartones,
+                configs: configs.map(c => ({
+                    ser: c.ser,
+                    bin: c.bin,
+                    num: c.num,
+                    offsetX: c.offsetX,
+                    offsetY: c.offsetY
+                }))
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `config_bingo_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            statusPanel.innerText = "💾 Configuración exportada correctamente.";
+            statusPanel.className = 'status exito';
+        } catch(err) {
+            console.error('Error al exportar configuración:', err);
+            statusPanel.innerText = "❌ Error al exportar configuración.";
+            statusPanel.className = 'status error';
+        }
+    });
+
+    document.getElementById('btn-import-config').addEventListener('click', () => {
+        document.getElementById('config-input').click();
+    });
+
+    document.getElementById('config-input').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            try {
+                const data = JSON.parse(ev.target.result);
+                if(data.configs && data.configs.length > 0) {
+                    totalCartones = data.totalCartones || data.configs.length;
+                    document.getElementById('cantidad-cartones').value = totalCartones;
+                    inicializarCartones(totalCartones);
+                    
+                    for(let i = 0; i < Math.min(data.configs.length, totalCartones); i++) {
+                        const c = data.configs[i];
+                        configs[i].ser = c.ser || { x: 45, y: 135, w: 150, h: 25 };
+                        configs[i].bin = c.bin || { x: 30, y: 170, w: 230, h: 25 };
+                        configs[i].num = c.num || { x: 30, y: 195, w: 230, h: 225 };
+                        configs[i].offsetX = c.offsetX || 0;
+                        configs[i].offsetY = c.offsetY || 0;
+                    }
+                    
+                    cartonActual = 0;
+                    cargarConfigActual();
+                    actualizarNavegacion();
+                    if(pdfCargado) renderizarPagina();
+                    statusPanel.innerText = `📂 Configuración importada: ${totalCartones} cartones.`;
+                    statusPanel.className = 'status exito';
+                } else {
+                    statusPanel.innerText = "⚠️ Archivo de configuración inválido.";
+                    statusPanel.className = 'status error';
+                }
+            } catch(err) {
+                statusPanel.innerText = "❌ Error al leer el archivo de configuración.";
+                statusPanel.className = 'status error';
+                console.error(err);
+            }
+        };
+        reader.readAsText(file);
+        e.target.value = '';
+    });
+
+    // --- Mouse dragging ---
+    guiaCanvas.addEventListener('mousedown', (e) => {
+        if(!pdfCargado || procesando) return;
+        const rect = guiaCanvas.getBoundingClientRect();
+        const scaleX = guiaCanvas.width / rect.width;
+        const scaleY = guiaCanvas.height / rect.height;
+        const mx = (e.clientX - rect.left) * scaleX;
+        const my = (e.clientY - rect.top) * scaleY;
+        const conf = configs[cartonActual] || new ConfiguracionCarton();
+        
+        const cuadros = [
+            { id: 'ser', x: conf.ser.x + conf.offsetX, y: conf.ser.y + conf.offsetY, w: conf.ser.w, h: conf.ser.h },
+            { id: 'bin', x: conf.bin.x + conf.offsetX, y: conf.bin.y + conf.offsetY, w: conf.bin.w, h: conf.bin.h },
+            { id: 'num', x: conf.num.x + conf.offsetX, y: conf.num.y + conf.offsetY, w: conf.num.w, h: conf.num.h }
+        ];
+        
+        for(const c of cuadros) {
+            if(mx >= c.x && mx <= c.x + c.w && my >= c.y && my <= c.y + c.h) {
+                dragging = c.id;
+                dragStartX = mx - c.x;
+                dragStartY = my - c.y;
+                guiaCanvas.style.cursor = 'move';
+                return;
+            }
+        }
+    });
+
+    guiaCanvas.addEventListener('mousemove', (e) => {
+        if(!dragging || !pdfCargado || procesando) return;
+        const rect = guiaCanvas.getBoundingClientRect();
+        const scaleX = guiaCanvas.width / rect.width;
+        const scaleY = guiaCanvas.height / rect.height;
+        const mx = (e.clientX - rect.left) * scaleX;
+        const my = (e.clientY - rect.top) * scaleY;
+        const conf = configs[cartonActual] || new ConfiguracionCarton();
+        
+        let idX, idY, numX, numY;
+        if(dragging === 'ser') { 
+            idX = 'serX'; idY = 'serY'; 
+            numX = 'num-serX'; numY = 'num-serY';
+        } else if(dragging === 'bin') { 
+            idX = 'binX'; idY = 'binY';
+            numX = 'num-binX'; numY = 'num-binY';
+        } else if(dragging === 'num') { 
+            idX = 'numX'; idY = 'numY';
+            numX = 'num-numX'; numY = 'num-numY';
+        }
+        
+        const sliderX = document.getElementById(idX);
+        const sliderY = document.getElementById(idY);
+        const numInputX = document.getElementById(numX);
+        const numInputY = document.getElementById(numY);
+        
+        let newX = Math.round(mx - dragStartX - conf.offsetX);
+        let newY = Math.round(my - dragStartY - conf.offsetY);
+        newX = Math.max(0, Math.min(parseFloat(sliderX.max), newX));
+        newY = Math.max(0, Math.min(parseFloat(sliderY.max), newY));
+        
+        sliderX.value = newX;
+        sliderY.value = newY;
+        numInputX.value = newX;
+        numInputY.value = newY;
+        
+        guardarConfigActual();
+        if(pdfCargado) actualizarGuiaVisual();
+    });
+
+    document.addEventListener('mouseup', () => {
+        if(dragging) {
+            dragging = null;
+            guiaCanvas.style.cursor = 'default';
+            guardarConfigActual();
+        }
+    });
+
+    // --- Inicializar ---
+    inicializarCartones(6);
+    actualizarNavegacion();
+    statusPanel.innerText = "📌 Carga un PDF con cartones de bingo para comenzar";
+
+    console.log('✅ Extractor de Bingo Profesional listo');
+    console.log('📌 Lógica de celda central:');
+    console.log('  - VC o letras → 76');
+    console.log('  - Números 31-45 → se mantienen');
+    console.log('  - Otros casos → 76');
+</script>
+</body>
+</html>
