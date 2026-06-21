@@ -509,18 +509,18 @@
 
       // Verificar cambio de contraseña obligatorio
       if (profile.must_change_password) {
-        window.location.href = '/change-password.html'
+        window.location.href = 'change-password.html'
         return
       }
 
       // Redirigir según rol
       const rutas = {
-        cliente:        '/dashboard-client.html',
-        vendedor:       '/dashboard-vendor.html',
-        administrador:  '/dashboard-admin.html'
+        cliente:        'dashboard-client.html',
+        vendedor:       'dashboard-vendor.html',
+        administrador:  'dashboard-admin.html'
       }
 
-      window.location.href = rutas[profile.rol] || '/login.html'
+      window.location.href = rutas[profile.rol] || 'login.html'
 
     } catch (e) {
       mostrarError('Error de conexión. Intenta nuevamente.')
@@ -613,7 +613,7 @@
     if (!profile || !profile.activo) return
 
     if (profile.must_change_password) {
-      window.location.href = '/change-password.html'
+      window.location.href = 'change-password.html'
       return
     }
 
