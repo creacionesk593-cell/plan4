@@ -11,10 +11,67 @@
             background: #0d0d0d;
             color: #e0e0e0;
             display: flex;
+            flex-direction: column; /* Cambiado a columna para soportar el navbar arriba */
+            min-height: 100vh;
+        }
+
+        /* BARRA DE NAVEGACIÓN SUPERIOR (ECOSISTEMA) */
+        .nav-ecosistema {
+            width: 100%;
+            background: #1a1a1a;
+            border-bottom: 1px solid #333;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+        .nav-brand {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #fff;
+        }
+        .nav-links {
+            display: flex;
+            gap: 12px;
+        }
+        .nav-btn {
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .btn-regresar {
+            background: #222;
+            color: #ccc;
+            border: 1px solid #444;
+        }
+        .btn-regresar:hover {
+            background: #333;
+            color: #fff;
+            border-color: #666;
+        }
+        .btn-cambiar {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0,123,255,0.2);
+        }
+        .btn-cambiar:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(0,123,255,0.4);
+        }
+
+        /* CONTENEDOR PRINCIPAL */
+        .main-wrapper {
+            flex: 1;
+            display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            padding: 20px;
+            padding: 40px 20px;
         }
         .container {
             background: #1a1a1a;
@@ -220,46 +277,59 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>⚡ PDF Vectorizador Avanzado para Escaneos</h1>
-        <p class="subtitle">Aislamiento de píxeles oscuros sobre lienzos PNG transparentes (Especial para fotos y copias)</p>
-        
-        <input type="file" id="pdfInput" accept=".pdf">
-        
-        <div class="control-group">
-            <div class="control-box">
-                <label>Sensibilidad de Trazo <span id="thresholdLabel" class="range-value">120</span></label>
-                <input type="range" id="thresholdSlider" min="60" max="180" value="120" step="5">
-                <small>Controla qué tan oscuro debe ser el trazo para conservarse. Valores más altos capturan números delgados.</small>
+
+    <!-- BARRA DE NAVEGACIÓN SUPERIOR INTEGRADA -->
+    <div class="nav-ecosistema">
+        <div class="nav-brand">TuBingo Pro — Herramientas de Imagen</div>
+        <div class="nav-links">
+            <a href="../dashboard-client.html" class="nav-btn btn-regresar">← Volver al Panel</a>
+            <a href="../app2/" class="nav-btn btn-cambiar">Ir a Módulo de Herramientas →</a>
+        </div>
+    </div>
+
+    <!-- ENVOLTORIO PRINCIPAL PARA CENTRAR EL CONTENIDO -->
+    <div class="main-wrapper">
+        <div class="container">
+            <h1>⚡ PDF Vectorizador Avanzado para Escaneos</h1>
+            <p class="subtitle">Aislamiento de píxeles oscuros sobre lienzos PNG transparentes (Especial para fotos y copias)</p>
+            
+            <input type="file" id="pdfInput" accept=".pdf">
+            
+            <div class="control-group">
+                <div class="control-box">
+                    <label>Sensibilidad de Trazo <span id="thresholdLabel" class="range-value">120</span></label>
+                    <input type="range" id="thresholdSlider" min="60" max="180" value="120" step="5">
+                    <small>Controla qué tan oscuro debe ser el trazo para conservarse. Valores más altos capturan números delgados.</small>
+                </div>
+
+                <div class="control-box">
+                    <label>Fuerza del Vector <span id="vectorLabel" class="range-value">Nivel 2</span></label>
+                    <input type="range" id="vectorSlider" min="1" max="4" value="2" step="1">
+                    <small>Suaviza los bordes pixelados del escaneo rellenando imperfecciones para dar calidad de imprenta.</small>
+                </div>
             </div>
 
-            <div class="control-box">
-                <label>Fuerza del Vector <span id="vectorLabel" class="range-value">Nivel 2</span></label>
-                <input type="range" id="vectorSlider" min="1" max="4" value="2" step="1">
-                <small>Suaviza los bordes pixelados del escaneo rellenando imperfecciones para dar calidad de imprenta.</small>
+            <div class="action-row">
+                <button id="processBtn" disabled>🚀 Vectorizar y Limpiar Transparente</button>
+                <button id="stopBtn" type="button">🛑 Parar Proceso</button>
             </div>
-        </div>
-
-        <div class="action-row">
-            <button id="processBtn" disabled>🚀 Vectorizar y Limpiar Transparente</button>
-            <button id="stopBtn" type="button">🛑 Parar Proceso</button>
-        </div>
-        
-        <div class="progress-bar" id="progressBar">
-            <div class="fill" id="progressFill"></div>
-        </div>
-
-        <div id="status">📄 Esperando archivo PDF...</div>
-        
-        <div class="preview-grid" id="previewContainer" style="display:none;">
-            <div class="preview-box">
-                <p>✨ Previsualización PNG Transparente (Solo números y líneas puras extraídas)</p>
-                <img id="processedPreview" src="" alt="Procesado">
+            
+            <div class="progress-bar" id="progressBar">
+                <div class="fill" id="progressFill"></div>
             </div>
-        </div>
 
-        <div id="downloadLink">
-            <a id="downloadBtn" download="documento_escaneado_limpio.pdf">📥 Descargar PDF Transparente Ultra Liviano</a>
+            <div id="status">📄 Esperando archivo PDF...</div>
+            
+            <div class="preview-grid" id="previewContainer" style="display:none;">
+                <div class="preview-box">
+                    <p>✨ Previsualización PNG Transparente (Solo números y líneas puras extraídas)</p>
+                    <img id="processedPreview" src="" alt="Procesado">
+                </div>
+            </div>
+
+            <div id="downloadLink">
+                <a id="downloadBtn" download="documento_escaneado_limpio.pdf">📥 Descargar PDF Transparente Ultra Liviano</a>
+            </div>
         </div>
     </div>
 
@@ -293,16 +363,14 @@
         thresholdSlider.addEventListener('input', () => thresholdLabel.textContent = thresholdSlider.value);
         vectorSlider.addEventListener('input', () => vectorLabel.textContent = "Nivel " + vectorSlider.value);
 
-        // Función para emitir sonido suave de éxito sin archivos externos
         function playSuccessSound() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 
-                // Nota 1 (Suave)
                 const osc1 = audioCtx.createOscillator();
                 const gain1 = audioCtx.createGain();
                 osc1.type = 'sine';
-                osc1.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5 (Do)
+                osc1.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
                 gain1.gain.setValueAtTime(0.15, audioCtx.currentTime);
                 gain1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
                 osc1.connect(gain1);
@@ -310,12 +378,11 @@
                 osc1.start();
                 osc1.stop(audioCtx.currentTime + 0.3);
 
-                // Nota 2 Armónica (Un poco después para dar efecto campana)
                 setTimeout(() => {
                     const osc2 = audioCtx.createOscillator();
                     const gain2 = audioCtx.createGain();
                     osc2.type = 'sine';
-                    osc2.frequency.setValueAtTime(659.25, audioCtx.currentTime); // E5 (Mi)
+                    osc2.frequency.setValueAtTime(659.25, audioCtx.currentTime); 
                     gain2.gain.setValueAtTime(0.12, audioCtx.currentTime);
                     gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
                     osc2.connect(gain2);
@@ -410,8 +477,6 @@
                     statusDiv.textContent = `⏳ Optimizando y aislando trazos ultra finos en pág. ${i}/${numPages}...`;
 
                     const page = await pdf.getPage(i);
-                    
-                    // SE SUBIÓ LA ESCALA A 4.0: Permite que fuentes extremadamente pequeñas mantengan pixeles definidos y legibles
                     const viewport = page.getViewport({ scale: 4.0 }); 
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d', { willReadFrequently: true });
@@ -423,26 +488,20 @@
                     let imageData = context.getImageData(0, 0, canvas.width, canvas.height);
                     const data = imageData.data;
 
-                    // Procesamiento y realce de curvas de números pequeños
                     for (let j = 0; j < data.length; j += 4) {
                         let r = data[j];
                         let g = data[j+1];
                         let b = data[j+2];
 
-                        // Filtro de alto contraste previo para forzar claridad en números pequeños
                         let gray = 0.299 * r + 0.587 * g + 0.114 * b;
                         
-                        // Si el pixel está cerca del umbral, lo obligamos a contrastar más duro
                         if (gray < threshold) {
-                            // Fuerza negro puro absoluto y suaviza la forma interna del carácter
                             data[j] = 0; data[j+1] = 0; data[j+2] = 0; data[j+3] = 255;
                         } else {
-                            // Fondo transparente absoluto
                             data[j+3] = 0;
                         }
                     }
 
-                    // Suavizado inteligente antialias para estandarizar la forma del texto
                     if (vectorLevel > 1) {
                         applyVectorSmoothness(data, canvas.width, canvas.height, vectorLevel);
                     }
@@ -455,7 +514,7 @@
                     }
 
                     const imgData = canvas.toDataURL('image/png');
-                    const widthMM = viewport.width * 0.066145833; // Ajuste matemático de escala 4.0 a milímetros reales
+                    const widthMM = viewport.width * 0.066145833; 
                     const heightMM = viewport.height * 0.066145833;
                     
                     if (firstPage) {
@@ -477,7 +536,6 @@
                 statusDiv.textContent = '✅ ¡Completado! Números pequeños estandarizados con súper-resolución.';
                 statusDiv.className = 'success';
 
-                // Ejecutar sonido armónico suave al finalizar con éxito
                 playSuccessSound();
 
                 const pdfBlob = pdfDoc.output('blob');
