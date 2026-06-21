@@ -36,6 +36,7 @@
     .btn-logout {
       background: none; border: 1.5px solid var(--gris-200); padding: 8px 14px;
       border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: background 0.2s;
     }
     .btn-logout:hover { background: var(--gris-100); }
     
@@ -73,6 +74,7 @@
     .btn {
       padding: 10px 20px; background: var(--azul); color: #fff; border: none;
       border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+      transition: background 0.2s;
     }
     .btn:hover { background: var(--azul-hover); }
     .btn:disabled { background: var(--gris-200); color: var(--gris-600); cursor: not-allowed; }
@@ -94,6 +96,7 @@
       <h2 id="txt-nombre">Cargando...</h2>
       <p>Panel de Gestión de Ventas</p>
     </div>
+    <!-- CORRECCIÓN DE CIERRE DE SESIÓN -->
     <button class="btn-logout" onclick="handleLogout()">Cerrar sesión</button>
   </header>
 
@@ -106,7 +109,8 @@
       <div class="form-group">
         <label for="input-email-buscar">Correo del Cliente</label>
         <div class="form-inline">
-          <input type="email" id="input-email-buscar" class="input-control" placeholder="Escribe para buscar cliente..." autocomplete="off">
+          <!-- INPUT ACTUALIZADO PARA CAPTURAR CADA LETRA EN TIEMPO REAL -->
+          <input type="email" id="input-email-buscar" class="input-control" placeholder="Escribe para buscar cliente al instante..." autocomplete="off">
           <button class="btn" id="btn-buscar" onclick="buscarClienteDirecto()">Buscar</button>
         </div>
         <!-- Lista de coincidencia dinámica -->
@@ -139,7 +143,11 @@
 <script type="module">
   import { supabase, guardAcceso, logout, mostrarError, mostrarExito, limpiarMensajes } from './configuracion.js'
 
-  window.handleLogout = async function() { await logout() }
+  // CORRECCIÓN SOLICITADA: CIERRE DE SESIÓN REDIRECCIONA DIRECTAMENTE A INDEX.HTML
+  window.handleLogout = async function() { 
+    await logout();
+    window.location.href = 'index.html';
+  }
   
   let clienteSeleccionado = null;
   const inputBuscar = document.getElementById('input-email-buscar');
@@ -164,17 +172,24 @@
     }
   }
 
-  // CONFIGURACIÓN DEL BUSCADOR EN TIEMPO REAL (LETRA POR LETRA)
+  // AJUSTE SOLICITADO: CONFIGURACIÓN COMPLETAMENTE FLUIDA LETRA POR LETRA
   function setupBuscadorPredictivo() {
     inputBuscar.addEventListener('input', async () => {
       const texto = inputBuscar.value.trim().toLowerCase();
+      
       if (texto.length < 1) {
         listaSugerencias.style.display = 'none';
+        document.getElementById('box-resultado').style.display = 'none';
+        document.getElementById('card-acciones').style.display = 'none';
         return;
       }
 
+      // Si el vendedor ya escribió un correo estructurado completo, consulta los detalles automáticamente sin esperar clics
+      if (validarEstructuraEmail(texto)) {
+        consultarDetallesCliente(texto);
+      }
+
       try {
-        // Consultamos coincidencias directamente en la vista que contiene los estados
         const { data, error } = await supabase
           .from('vista_acceso_cliente')
           .select('id, email, nombre')
@@ -195,9 +210,13 @@
         
         listaSugerencias.style.display = 'block';
 
-        // Evento al dar clic a un elemento sugerido
+        // Al hacer clic sobre una de las sugerencias predictivas
         document.querySelectorAll('.sugerencia-item').forEach(item => {
-          item.addEventListener('click', (e) => {
+          item.replaceWith(item.cloneNode(true)); // Limpiar listeners viejos
+        });
+
+        document.querySelectorAll('.sugerencia-item').forEach(item => {
+          item.addEventListener('click', () => {
             const emailElegido = item.getAttribute('data-email');
             inputBuscar.value = emailElegido;
             listaSugerencias.style.display = 'none';
@@ -218,21 +237,24 @@
     });
   }
 
-  // Función usada si el vendedor escribe completo y da clic al botón "Buscar" manualmente
+  // Función auxiliar de validación sintáctica para el trigger automático letra por letra
+  function validarEstructuraEmail(email) {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  }
+
   window.buscarClienteDirecto = function() {
     const email = inputBuscar.value.trim();
     if (!email) return mostrarError('Introduce un correo electrónico válido.');
     consultarDetallesCliente(email);
   }
 
-  // FUNCIÓN PRINCIPAL: Extrae y pinta todo acoplado a tu Vista
   async function consultarDetallesCliente(email) {
     limpiarMensajes()
     const box = document.getElementById('box-resultado')
     const acciones = document.getElementById('card-acciones')
 
     try {
-      // Consultamos la fila única de este cliente dentro de tu vista_acceso_cliente
       const { data: cl, error } = await supabase
         .from('vista_acceso_cliente')
         .select('*')
@@ -240,15 +262,13 @@
         .maybeSingle()
 
       if (error || !cl) {
+        // Mantiene ocultos los paneles si se sigue editando y no coincide de manera exacta con nadie
         box.style.display = 'none'
         acciones.style.display = 'none'
-        return mostrarError('Cliente no encontrado o no está catalogado.')
+        return;
       }
 
-      // Guardamos la referencia para las operaciones de botones
       clienteSeleccionado = cl;
-
-      // Renderizado ajustado exactamente a los nombres de columna de tu Vista
       const saldoCreditos = cl.creditos_disponibles || 0;[cite: 4]
       let estadoSuscripcion = 'Sin suscripción activa';[cite: 4]
 
@@ -266,7 +286,7 @@
       box.style.display = 'block'
       acciones.style.display = 'block'
     } catch (e) {
-      mostrarError('Ocurrió un error al procesar la búsqueda del cliente.')
+      console.error(e);
     }
   }
 
@@ -283,7 +303,7 @@
       if (error) throw error
 
       mostrarExito('Suscripción asignada y activada correctamente.')
-      consultarDetallesCliente(clienteSeleccionado.email) // Recarga los datos en tiempo real
+      consultarDetallesCliente(clienteSeleccionado.email)
     } catch (e) {
       mostrarError(e.message || 'Error al intentar procesar la suscripción.')
     }
@@ -292,7 +312,7 @@
   window.recargarCreditos = async function() {
     if (!clienteSeleccionado) return
     limpiarMensajes()
-    const cant = parseInt(document.getElementById('input-credits' ? document.getElementById('input-creditos').value : '0'), 10)
+    const cant = parseInt(document.getElementById('input-creditos').value, 10)
     if (isNaN(cant) || cant <= 0) return mostrarError('Introduce una cantidad válida superior a 0.')
 
     try {
@@ -304,7 +324,7 @@
 
       mostrarExito(`Se han agregado ${cant} créditos al cliente con éxito.`);
       document.getElementById('input-creditos').value = ''
-      consultarDetallesCliente(clienteSeleccionado.email) // Recarga los datos en tiempo real
+      consultarDetallesCliente(clienteSeleccionado.email)
     } catch (e) {
       mostrarError(e.message || 'Error al intentar depositar los créditos.')
     }
