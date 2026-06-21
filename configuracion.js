@@ -47,7 +47,7 @@ export async function getProfile(userId) {
  */
 export async function logout() {
   await supabase.auth.signOut()
-  window.location.href = '/login.html'
+  window.location.href = 'login.html'
 }
 
 
@@ -71,7 +71,7 @@ export async function guardAcceso(rolesPermitidos) {
   // 1. Verificar sesión activa
   const user = await getUser()
   if (!user) {
-    window.location.href = '/login.html'
+    window.location.href = 'login.html'
     return null
   }
 
@@ -84,13 +84,13 @@ export async function guardAcceso(rolesPermitidos) {
 
   // 3. Verificar si debe cambiar contraseña
   if (profile.must_change_password) {
-    window.location.href = '/change-password.html'
+    window.location.href = 'change-password.html'
     return null
   }
 
   // 4. Verificar rol
   if (!roles.includes(profile.rol)) {
-    window.location.href = '/login.html'
+    window.location.href = 'login.html'
     return null
   }
 
