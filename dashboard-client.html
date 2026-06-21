@@ -120,7 +120,6 @@
             <h4>Aplicación Principal</h4>
             <p>Accede al generador, lector y organizador automatizado de eventos.</p>
           </div>
-          <!-- Apunta de manera directa a tu repositorio o subcarpeta app1 -->
           <a href="./app1/" id="btn-app1" class="btn-app disabled">Entrar a la App</a>
         </div>
 
@@ -129,7 +128,6 @@
             <h4>Módulo de Herramientas</h4>
             <p>Exportación de datos a Excel, vectorizaciones y utilidades adicionales.</p>
           </div>
-          <!-- Apunta de manera directa a tu repositorio o subcarpeta app2 -->
           <a href="./app2/" id="btn-app2" class="btn-app disabled">Entrar al Módulo</a>
         </div>
 
@@ -138,26 +136,31 @@
   </main>
 
 <script type="module">
-  import { guardAcceso, logout, verificarAccesoApp, formatearFecha } from './configuracion.js'
+  import { supabase, guardAcceso, logout, formatearFecha } from './configuracion.js'
 
   window.handleLogout = async function() {
     await logout()
   }
 
-  // Inicializar Panel de Cliente
   ;(async function init() {
-    // 1. Validar sesión, rol de cliente y cuenta activa
+    // 1. Validar sesión y rol del usuario
     const profile = await guardAcceso('cliente')
-    if (!profile) return // guardAcceso redirecciona si expira o no es cliente
+    if (!profile) return
 
-    // 2. Pintar datos de cabecera
+    // 2. Pintar datos de cabecera iniciales
     document.getElementById('txt-nombre').textContent = profile.nombre
     document.getElementById('txt-email').textContent  = profile.email
 
     try {
-      // 3. Consultar vista optimizada para validar accesos
-      const acceso = await verificarAccesoApp(profile.id)
-      
+      // 3. Consultar la fila del cliente directo de la vista oficial de tu DB
+      const { data: acceso, error } = await supabase
+        .from('vista_acceso_cliente')
+        .select('*')
+        .eq('id', profile.id)
+        .maybeSingle()
+
+      if (error || !acceso) throw new Error('No se encontraron datos de acceso.')
+
       const alertaEl = document.getElementById('status-alerta')
       const msgEl    = document.getElementById('status-msg')
       const subStatus= document.getElementById('txt-sub-status')
@@ -168,35 +171,37 @@
       const btnApp2  = document.getElementById('btn-app2')
 
       alertaEl.style.display = 'flex'
-      credSaldo.textContent  = acceso.creditos_disponibles || 0[cite: 6]
+      credSaldo.textContent  = acceso.creditos_disponibles || 0
 
-      if (acceso.puede) {
+      // 4. Validar si el cliente cuenta con los accesos permitidos
+      if (acceso.puede_acceder) {
         alertaEl.className = 'alerta-acceso con-acceso'
         msgEl.textContent  = '¡Acceso Autorizado! Tienes una suscripción válida o créditos disponibles.'
         
-        // Habilitar botones de las aplicaciones
+        // Desbloquear los botones de herramientas de GitHub Pages
         btnApp1.classList.remove('disabled')
         btnApp2.classList.remove('disabled')
       } else {
         alertaEl.className = 'alerta-acceso sin-acceso'
-        msgEl.textContent  = acceso.motivo || 'No posees una suscripción activa ni créditos suficientes para acceder.'
+        msgEl.textContent  = 'No posees una suscripción activa ni créditos suficientes para acceder.'
       }
 
-      // Renderizar estado detallado de la suscripción
-      if (acceso.suscripcion_vence_en) {
+      // 5. Renderizar los datos de la suscripción según tu vista de base de datos
+      if (acceso.tiene_suscripcion_activa && acceso.suscripcion_vence_en) {
         subStatus.textContent = 'Activa'
         subStatus.style.color = 'var(--verde)'
-        subVence.textContent  = `Vence el: ${formatearFecha(acceso.suscripcion_vence_en)}`
+        subVence.textContent  = `Vence el: ${formatearFecha ? formatearFecha(acceso.suscripcion_vence_en) : new Date(acceso.suscripcion_vence_en).toLocaleDateString()}`
       } else {
         subStatus.textContent = 'Inactiva'
         subStatus.style.color = 'var(--rojo)'
         subVence.textContent  = 'Sin renovación vigente'
       }
 
-    } catch (error) {
+    } catch (err) {
       const errEl = document.getElementById('mensaje-error')
       errEl.textContent = 'Error al sincronizar el estado de tu cuenta.'
       errEl.style.display = 'block'
+      console.error(err)
     }
   })()
 </script>
