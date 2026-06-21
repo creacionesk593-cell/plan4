@@ -245,6 +245,7 @@
     window.location.href = 'index.html';
   }
 
+  let adminLogueado = null;
   let clienteSeleccionado = null;
   const inputBuscar = document.getElementById('input-email-buscar');
   const listaSugerencias = document.getElementById('lista-sugerencias');
@@ -252,6 +253,8 @@
   ;(function init() {
     guardAcceso('administrador').then(profile => {
       if (!profile) return;
+      adminLogueado = profile; // Almacenamos el perfil completo con el ID del Admin
+      
       cargarMetricas();
       cargarReglasReguladoras();
       cargarPlanesAdmin();
@@ -280,7 +283,7 @@
     document.getElementById('m-matrices').textContent = m || 0;
   }
 
-  // 2. CONFIGURACIÓN DE CRÉDITOS CRUZADOS POR APP
+  // 2. CONFIGURACIÓN DE CRÉDITOS CRUZADOS (SOLUCIONADO DEFINITIVO)
   async function cargarReglasReguladoras() {
     const { data: s1 } = await supabase.from('system_settings').select('value').eq('key', 'costo_app1').maybeSingle();
     const { data: s2 } = await supabase.from('system_settings').select('value').eq('key', 'costo_app2').maybeSingle();
@@ -290,10 +293,23 @@
   }
 
   async function actualizarRegla(llave, inputId) {
-    const valor = document.getElementById(inputId).value;
-    const { error } = await supabase.from('system_settings').upsert({ key: llave, value: valor }, { onConflict: 'key' });
-    if (error) msg('error', 'Error actualizando las reglas.');
-    else msg('exito', 'Regla de negocio guardada. Las Apps descontarán este valor automáticamente.');
+    const elementoInput = document.getElementById(inputId);
+    const valor = elementoInput.value.trim();
+
+    if (!valor) return msg('error', 'El valor no puede estar vacío.');
+
+    // Corrección Estructurada de Columnas para Upsert en Supabase
+    const { error } = await supabase
+      .from('system_settings')
+      .upsert({ key: llave, value: valor }, { onConflict: 'key' });
+
+    if (error) {
+      console.error("Error en upsert settings:", error);
+      msg('error', 'Error al guardar en la tabla: ' + error.message);
+    } else {
+      msg('exito', `Regla [${llave}] guardada correctamente con valor (${valor}).`);
+      await cargarReglasReguladoras();
+    }
   }
 
   // 3. REGISTRO DE CUENTAS
@@ -419,7 +435,7 @@
     else msg('exito', 'Contraseña restablecida de manera inmediata.');
   }
 
-  // 7. GESTION DE PLANES Y CATALOGOS
+  // 7. GESTION DE PLANES Y CATALOGOS (CORREGIDO CREADOR CON TU ID DE ADMIN)
   async function cargarPlanesAdmin() {
     const { data } = await supabase.from('plans').select('*').order('dias_duracion', { ascending: true });
     const tbody = document.getElementById('tbody-planes');
@@ -436,9 +452,30 @@
     const precio = parseFloat(document.getElementById('plan-precio').value);
 
     if (!nombre || isNaN(dias) || isNaN(precio)) return msg('error', 'Completa el formulario del plan.');
-    await supabase.from('plans').insert([{ nombre, dias_duracion: dias, precio, activo: true }]);
-    msg('exito', 'Plan comercial guardado.');
-    await cargarPlanesAdmin();
+    
+    if (!adminLogueado || !adminLogueado.id) {
+      return msg('error', 'Sesión de administrador no válida. Por favor, recarga.');
+    }
+
+    const nuevoPlanData = {
+      nombre: nombre,
+      dias_duracion: dias,
+      precio: precio,
+      activo: true,
+      created_by: adminLogueado.id // Se asigna correctamente el ID de la sesión activa
+    };
+
+    const { error } = await supabase.from('plans').insert([nuevoPlanData]);
+    
+    if (error) {
+      msg('error', error.message);
+    } else {
+      msg('exito', 'Plan comercial guardado con tu ID de Administrador.');
+      document.getElementById('plan-nombre').value = '';
+      document.getElementById('plan-dias').value = '';
+      document.getElementById('plan-precio').value = '';
+      await cargarPlanesAdmin();
+    }
   }
 
   async function cargarUsuariosAdmin() {
