@@ -113,7 +113,7 @@
       </div>
     </div>
 
-    <!-- METRICAS EN TIEMPO REAL -->
+    <!-- METRICAS -->
     <div class="grid-metricas">
       <div class="metrica-card"><p>Clientes Registrados</p><h3 id="m-clientes">...</h3></div>
       <div class="metrica-card"><p>Vendedores Activos</p><h3 id="m-vendedores">...</h3></div>
@@ -124,7 +124,6 @@
     <!-- GESTOR OPERATIVO DE CLIENTES -->
     <div class="card">
       <h2>Buscador y Gestor Operativo de Clientes</h2>
-      <p style="font-size: 12px; color: var(--gris-600); margin-bottom: 12px;">Busca un cliente para inyectar saldos, renovar licencias de días o ver su estatus completo.</p>
       <div class="form-group">
         <div class="form-row">
           <input type="email" id="input-email-buscar" class="input-control" placeholder="Escribe el email del cliente a gestionar..." autocomplete="off">
@@ -160,24 +159,23 @@
       <!-- REGLAS DE DESCUENTO POR APP -->
       <div class="card">
         <h2>Reglas de Descuento de Créditos</h2>
-        <p style="font-size: 12px; color: var(--gris-600); margin-bottom: 16px;">Define cuántos créditos consume el procesamiento de un archivo en cada aplicación de forma global.</p>
         <div class="form-group">
           <label>Costo de Procesamiento App 1 (Por archivo PDF)</label>
           <div class="form-row">
-            <input type="number" id="cfg-app1" class="input-control" placeholder="Ej. 1" min="0">
+            <input type="number" id="cfg-app1" class="input-control" min="0">
             <button class="btn btn-primary" id="btn-save-app1">Actualizar</button>
           </div>
         </div>
         <div class="form-group" style="margin-bottom: 0;">
           <label>Costo de Processing App 2 (Por archivo PDF)</label>
           <div class="form-row">
-            <input type="number" id="cfg-app2" class="input-control" placeholder="Ej. 2" min="0">
+            <input type="number" id="cfg-app2" class="input-control" min="0">
             <button class="btn btn-primary" id="btn-save-app2">Actualizar</button>
           </div>
         </div>
       </div>
 
-      <!-- CREACIÓN DE NUEVAS CUENTAS (CORREGIDO PARA EVITAR ERROR 500) -->
+      <!-- CREACIÓN DE NUEVAS CUENTAS (OPTIMIZADO POR RPC) -->
       <div class="card">
         <h2>Creación de Cuentas de Trabajo</h2>
         <div class="form-row">
@@ -228,7 +226,7 @@
         </div>
       </div>
 
-      <!-- Control de usuarios -->
+      <!-- CONTROL OPERATIVO DE USUARIOS -->
       <div class="card">
         <h2>Control Operativo de Usuarios</h2>
         <div class="table-container" style="max-height: 320px; overflow-y: auto;">
@@ -292,7 +290,7 @@
     document.getElementById('m-matrices').textContent = m || 0;
   }
 
-  // 2. COSTOS DE REGLAS DE DESCUENTO
+  // 2. REGLAS DE DESCUENTO
   async function cargarReglasReguladoras() {
     const { data: s1 } = await supabase.from('system_settings').select('value').eq('key', 'costo_app1').maybeSingle();
     const { data: s2 } = await supabase.from('system_settings').select('value').eq('key', 'costo_app2').maybeSingle();
@@ -302,24 +300,15 @@
   }
 
   async function actualizarRegla(llave, inputId) {
-    const elementoInput = document.getElementById(inputId);
-    const valor = elementoInput.value.trim();
-
+    const valor = document.getElementById(inputId).value.trim();
     if (!valor) return msg('error', 'El valor no puede estar vacío.');
 
-    const { error } = await supabase
-      .from('system_settings')
-      .upsert({ key: llave, value: valor }, { onConflict: 'key' });
-
-    if (error) {
-      msg('error', 'Error de políticas o base de datos: ' + error.message);
-    } else {
-      msg('exito', `Regla [${llave}] actualizada a ${valor} correctamente.`);
-      await cargarReglasReguladoras();
-    }
+    const { error } = await supabase.from('system_settings').upsert({ key: llave, value: valor }, { onConflict: 'key' });
+    if (error) msg('error', 'Error: ' + error.message);
+    else { msg('exito', 'Regla actualizada correctamente.'); await cargarReglasReguladoras(); }
   }
 
-  // 3. REGISTRO SEGURO Y COMPATIBLE DE CUENTAS 
+  // 3. REGISTRO SEGURO MEDIANTE LA NUEVA FUNCIÓN RPC
   async function registrarUsuario() {
     const nombre = document.getElementById('reg-nombre').value.trim();
     const email = document.getElementById('reg-email').value.trim();
@@ -327,44 +316,32 @@
     const rol = document.getElementById('reg-rol').value;
 
     if (!nombre || !email || !password) return msg('error', 'Completa todos los campos obligatorios.');
+    if (password.length < 6) return msg('error', 'La contraseña debe tener mínimo 6 caracteres.');
 
-    // Al usar signUp aislando la sesión de Supabase evitamos el conflicto 500 interno del admin logueado
-    const { data: res, error: errAuth } = await supabase.auth.signUp({ 
-      email: email, 
-      password: password, 
-      options: { data: { nombre: nombre, admin_created: true } } 
+    // Llamada directa al backend RPC evitando choques de tokens y sesiones cruzadas
+    const { data: nuevoUid, error: errRpc } = await supabase.rpc('crear_usuario_desde_admin', {
+      p_email: email,
+      p_password: password,
+      p_nombre: nombre,
+      p_rol: rol
     });
+
+    if (errRpc) {
+      console.error(errRpc);
+      return msg('error', 'Error al dar de alta: ' + errRpc.message);
+    }
+
+    msg('exito', `¡Cuenta de ${rol.toUpperCase()} (${email}) creada con éxito total!`);
     
-    if (errAuth) {
-      console.error(errAuth);
-      return msg('error', 'Error: ' + errAuth.message);
-    }
-
-    if (res?.user) {
-      // Sincronización explícita en tu tabla profiles por si el trigger está pausado
-      const { error: errProf } = await supabase
-        .from('profiles')
-        .upsert({ id: res.user.id, email: email, rol: rol, activo: true, nombre: nombre }, { onConflict: 'id' });
-
-      if (errProf) {
-        // Si el perfil ya se creó automáticamente por Trigger, procedemos a actualizarlo para evitar fallos
-        await supabase.from('profiles').update({ rol: rol, activo: true, nombre: nombre }).eq('id', res.user.id);
-      }
-
-      msg('exito', `¡La cuenta para ${email} se ha creado y activado correctamente!`);
-      
-      document.getElementById('reg-nombre').value = '';
-      document.getElementById('reg-email').value = '';
-      document.getElementById('reg-password').value = '';
-      
-      await cargarUsuariosAdmin();
-      await cargarMetricas();
-    } else {
-      msg('error', 'Supabase procesó la solicitud pero no retornó un usuario válido. Revisa si el correo ya existe.');
-    }
+    document.getElementById('reg-nombre').value = '';
+    document.getElementById('reg-email').value = '';
+    document.getElementById('reg-password').value = '';
+    
+    await cargarUsuariosAdmin();
+    await cargarMetricas();
   }
 
-  // 4. AUTOPREDICTIVO Y BUSCADOR GENERAL DE CLIENTES
+  // 4. AUTOPREDICTIVO DE CLIENTES
   function setupPredictivoAdmin() {
     inputBuscar.addEventListener('input', async () => {
       const texto = inputBuscar.value.trim().toLowerCase();
@@ -403,17 +380,15 @@
     const box = document.getElementById('box-resultado');
     const panelSaldo = document.getElementById('acciones-saldo-admin');
 
-    // Cambiado directamente a profiles para evitar bloqueos de vistas desactualizadas
     const { data: cl, error } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
     if (error || !cl) {
       box.style.display = 'none'; panelSaldo.style.display = 'none';
-      msg('error', 'No se encontró al usuario con el email: ' + email);
+      msg('error', 'No se localizó al usuario: ' + email);
       return;
     }
 
     clienteSeleccionado = cl;
     
-    // Obtener saldos y suscripciones en tiempo real
     const { data: sub } = await supabase.from('subscriptions').select('*').eq('user_id', cl.id).eq('activa', true).maybeSingle();
     const { data: wallet } = await supabase.from('wallets').select('creditos').eq('user_id', cl.id).maybeSingle();
 
@@ -421,10 +396,10 @@
 
     box.innerHTML = `
       <strong>Nombre del Cliente:</strong> ${cl.nombre || 'Sin nombre asignado'}<br>
-      <strong>ID de Usuario:</strong> ${cl.id}<br>
+      <strong>ID Único:</strong> ${cl.id}<br>
       <strong>Estatus Cuenta:</strong> ${cl.activo ? '🟢 Activo' : '🔴 Suspendido'}<br>
-      <strong>Fondo de Créditos:</strong> ${wallet?.creditos || 0} créditos disponibles<br>
-      <strong>Suscripción Licencia:</strong> ${est}
+      <strong>Créditos en Monedero:</strong> ${wallet?.creditos || 0} créditos disponibles<br>
+      <strong>Licencia de Suscripción:</strong> ${est}
     `;
     box.style.display = 'block';
     panelSaldo.style.display = 'block';
@@ -432,28 +407,23 @@
 
   // 5. INYECTAR RECARGAS Y PLANES
   async function ejecutarAsignarPlanAdmin() {
-    if (!clienteSeleccionado) return msg('error', 'Primero busca y selecciona un cliente válido.');
+    if (!clienteSeleccionado) return msg('error', 'Selecciona un cliente válido.');
     const planId = document.getElementById('select-plan-admin').value;
     
     const { error } = await supabase.rpc('asignar_plan_a_cliente', { p_cliente_id: clienteSeleccionado.id, p_plan_id: planId });
-    if (error) {
-      msg('error', 'Error en RPC: ' + error.message);
-    } else { 
-      msg('exito', '¡Plan comercial asignado y activado correctamente!'); 
-      consultarDetallesClienteAdmin(clienteSeleccionado.email); 
-    }
+    if (error) msg('error', 'Error: ' + error.message);
+    else { msg('exito', '¡Plan activado con éxito!'); consultarDetallesClienteAdmin(clienteSeleccionado.email); }
   }
 
   async function ejecutarRecargaCreditosAdmin() {
-    if (!clienteSeleccionado) return msg('error', 'Primero busca y selecciona un cliente.');
+    if (!clienteSeleccionado) return msg('error', 'Selecciona un cliente.');
     const cant = parseInt(document.getElementById('input-creditos-admin').value, 10);
-    if (isNaN(cant) || cant <= 0) return msg('error', 'Introduce una cantidad de créditos válida.');
+    if (isNaN(cant) || cant <= 0) return msg('error', 'Cantidad inválida.');
 
     const { error } = await supabase.rpc('recargar_creditos_cliente', { p_cliente_id: clienteSeleccionado.id, p_cantidad: cant });
-    if (error) {
-      msg('error', 'Error al inyectar saldo: ' + error.message);
-    } else {
-      msg('exito', `¡Se inyectaron ${cant} créditos con éxito al usuario!`);
+    if (error) msg('error', 'Error: ' + error.message);
+    else {
+      msg('exito', `¡Créditos inyectados correctamente!`);
       document.getElementById('input-creditos-admin').value = '';
       consultarDetallesClienteAdmin(clienteSeleccionado.email);
     }
@@ -462,16 +432,16 @@
   // 6. ACCIONES DE TABLA DIRECTAS
   window.alternarEstadoUsuario = async function(id, estadoActual) {
     await supabase.from('profiles').update({ activo: !estadoActual }).eq('id', id);
-    msg('exito', 'Estado modificado.');
+    msg('exito', 'Estado actualizado.');
     await cargarUsuariosAdmin();
   }
 
   window.resetearPasswordAdmin = async function(email) {
     const nuevaPassword = prompt(`Introduce la nueva contraseña directa para ${email}:`);
-    if (!nuevaPassword || nuevaPassword.length < 6) return alert('Operación cancelada o contraseña muy corta.');
+    if (!nuevaPassword || nuevaPassword.length < 6) return alert('Operación cancelada o muy corta.');
     const { error } = await supabase.rpc('admin_reset_user_password', { p_email: email, p_new_password: nuevaPassword });
     if (error) msg('error', error.message);
-    else msg('exito', 'Contraseña cambiada con éxito inmediato.');
+    else msg('exito', 'Contraseña restablecida de inmediato.');
   }
 
   // 7. PLANES COMERCIALES
@@ -490,9 +460,8 @@
     const dias = parseInt(document.getElementById('plan-dias').value, 10);
     const precio = parseFloat(document.getElementById('plan-precio').value);
 
-    if (!nombre || isNaN(dias) || isNaN(precio)) return msg('error', 'Completa todos los campos del plan de forma válida.');
-    
-    if (!adminLogueado || !adminLogueado.id) return msg('error', 'Sesión inválida.');
+    if (!nombre || isNaN(dias) || isNaN(precio)) return msg('error', 'Completa el formulario del plan.');
+    if (!adminLogueado || !adminLogueado.id) return msg('error', 'Sesión no válida.');
 
     const { error } = await supabase.from('plans').insert([{
       nombre: nombre,
@@ -502,15 +471,8 @@
       created_by: adminLogueado.id
     }]);
     
-    if (error) {
-      msg('error', error.message);
-    } else {
-      msg('exito', 'Nuevo plan guardado perfectamente.');
-      document.getElementById('plan-nombre').value = '';
-      document.getElementById('plan-dias').value = '';
-      document.getElementById('plan-precio').value = '';
-      await cargarPlanesAdmin();
-    }
+    if (error) msg('error', error.message);
+    else { msg('exito', 'Plan guardado perfectamente.'); document.getElementById('plan-nombre').value = ''; document.getElementById('plan-dias').value = ''; document.getElementById('plan-precio').value = ''; await cargarPlanesAdmin(); }
   }
 
   async function cargarUsuariosAdmin() {
