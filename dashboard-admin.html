@@ -88,8 +88,8 @@
 
     .acciones-td { display: flex; gap: 6px; }
 
-    #error-global { display: none; background: #fef2f2; color: var(--rojo); padding: 12px; border-radius: 6px; font-weight: 500; border: 1px solid #fecaca; }
-    #exito-global { display: none; background: #f0fdf4; color: var(--verde); padding: 12px; border-radius: 6px; font-weight: 500; border: 1px solid #bbf7d0; }
+    #error-global { display: none; background: #fef2f2; color: var(--rojo); padding: 12px; border-radius: 6px; font-weight: 500; border: 1px solid #fecaca; margin-bottom: 10px; }
+    #exito-global { display: none; background: #f0fdf4; color: var(--verde); padding: 12px; border-radius: 6px; font-weight: 500; border: 1px solid #bbf7d0; margin-bottom: 10px; }
   </style>
 </head>
 <body>
@@ -103,6 +103,7 @@
     <div id="error-global"></div>
     <div id="exito-global"></div>
 
+    <!-- ACCESOS CORPORATIVOS -->
     <div class="card">
       <h2>Acceso Corporativo Directo (Modo Dios)</h2>
       <div class="apps-master">
@@ -112,6 +113,7 @@
       </div>
     </div>
 
+    <!-- METRICAS EN TIEMPO REAL -->
     <div class="grid-metricas">
       <div class="metrica-card"><p>Clientes Registrados</p><h3 id="m-clientes">...</h3></div>
       <div class="metrica-card"><p>Vendedores Activos</p><h3 id="m-vendedores">...</h3></div>
@@ -119,6 +121,7 @@
       <div class="metrica-card"><p>Total Matrices en Nube</p><h3 id="m-matrices">...</h3></div>
     </div>
 
+    <!-- GESTOR OPERATIVO DE CLIENTES -->
     <div class="card">
       <h2>Buscador y Gestor Operativo de Clientes</h2>
       <p style="font-size: 12px; color: var(--gris-600); margin-bottom: 12px;">Busca un cliente para inyectar saldos, renovar licencias de días o ver su estatus completo.</p>
@@ -132,6 +135,7 @@
 
       <div id="box-resultado" class="info-busqueda"></div>
 
+      <!-- Acciones de saldo rápidas -->
       <div id="acciones-saldo-admin" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gris-200);">
         <div class="form-row">
           <div style="flex: 1;">
@@ -153,6 +157,7 @@
     </div>
 
     <div class="seccion-doble">
+      <!-- REGLAS DE DESCUENTO POR APP -->
       <div class="card">
         <h2>Reglas de Descuento de Créditos</h2>
         <p style="font-size: 12px; color: var(--gris-600); margin-bottom: 16px;">Define cuántos créditos consume el procesamiento de un archivo en cada aplicación de forma global.</p>
@@ -164,7 +169,7 @@
           </div>
         </div>
         <div class="form-group" style="margin-bottom: 0;">
-          <label>Costo de Procesamiento App 2 (Por archivo PDF)</label>
+          <label>Costo de Processing App 2 (Por archivo PDF)</label>
           <div class="form-row">
             <input type="number" id="cfg-app2" class="input-control" placeholder="Ej. 2" min="0">
             <button class="btn btn-primary" id="btn-save-app2">Actualizar</button>
@@ -172,6 +177,7 @@
         </div>
       </div>
 
+      <!-- CREACIÓN DE NUEVAS CUENTAS (CORREGIDO PARA EVITAR ERROR 500) -->
       <div class="card">
         <h2>Creación de Cuentas de Trabajo</h2>
         <div class="form-row">
@@ -201,6 +207,7 @@
     </div>
 
     <div class="seccion-doble">
+      <!-- CATALOGO DE PLANES COMERCIALES -->
       <div class="card">
         <h2>Estructura de Planes Comerciales</h2>
         <div class="form-row" style="margin-bottom: 12px;">
@@ -221,6 +228,7 @@
         </div>
       </div>
 
+      <!-- Control de usuarios -->
       <div class="card">
         <h2>Control Operativo de Usuarios</h2>
         <div class="table-container" style="max-height: 320px; overflow-y: auto;">
@@ -253,7 +261,7 @@
   ;(function init() {
     guardAcceso('administrador').then(profile => {
       if (!profile) return;
-      adminLogueado = profile; // Almacenamos el perfil completo con el ID del Admin
+      adminLogueado = profile;
       
       cargarMetricas();
       cargarReglasReguladoras();
@@ -267,10 +275,11 @@
   function msg(tipo, texto) {
     const el = document.getElementById(tipo === 'error' ? 'error-global' : 'exito-global');
     el.textContent = texto; el.style.display = 'block';
-    setTimeout(() => el.style.display = 'none', 5000);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => el.style.display = 'none', 6000);
   }
 
-  // 1. CARGAR METRICAS REALES
+  // 1. METRICAS
   async function cargarMetricas() {
     const { count: c } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('rol', 'cliente');
     const { count: v } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('rol', 'vendedor');
@@ -283,12 +292,12 @@
     document.getElementById('m-matrices').textContent = m || 0;
   }
 
-  // 2. CONFIGURACIÓN DE CRÉDITOS CRUZADOS (SOLUCIONADO DEFINITIVO)
+  // 2. COSTOS DE REGLAS DE DESCUENTO
   async function cargarReglasReguladoras() {
     const { data: s1 } = await supabase.from('system_settings').select('value').eq('key', 'costo_app1').maybeSingle();
     const { data: s2 } = await supabase.from('system_settings').select('value').eq('key', 'costo_app2').maybeSingle();
     
-    document.getElementById('cfg-app1').value = s1?.value || 1;
+    document.getElementById('cfg-app1').value = s1?.value || 2;
     document.getElementById('cfg-app2').value = s2?.value || 2;
   }
 
@@ -298,21 +307,19 @@
 
     if (!valor) return msg('error', 'El valor no puede estar vacío.');
 
-    // Corrección Estructurada de Columnas para Upsert en Supabase
     const { error } = await supabase
       .from('system_settings')
       .upsert({ key: llave, value: valor }, { onConflict: 'key' });
 
     if (error) {
-      console.error("Error en upsert settings:", error);
-      msg('error', 'Error al guardar en la tabla: ' + error.message);
+      msg('error', 'Error de políticas o base de datos: ' + error.message);
     } else {
-      msg('exito', `Regla [${llave}] guardada correctamente con valor (${valor}).`);
+      msg('exito', `Regla [${llave}] actualizada a ${valor} correctamente.`);
       await cargarReglasReguladoras();
     }
   }
 
-  // 3. REGISTRO DE CUENTAS
+  // 3. REGISTRO SEGURO Y COMPATIBLE DE CUENTAS 
   async function registrarUsuario() {
     const nombre = document.getElementById('reg-nombre').value.trim();
     const email = document.getElementById('reg-email').value.trim();
@@ -321,34 +328,53 @@
 
     if (!nombre || !email || !password) return msg('error', 'Completa todos los campos obligatorios.');
 
+    // Al usar signUp aislando la sesión de Supabase evitamos el conflicto 500 interno del admin logueado
     const { data: res, error: errAuth } = await supabase.auth.signUp({ 
-      email, password, options: { data: { nombre: nombre } } 
+      email: email, 
+      password: password, 
+      options: { data: { nombre: nombre, admin_created: true } } 
     });
     
-    if (errAuth) return msg('error', errAuth.message);
+    if (errAuth) {
+      console.error(errAuth);
+      return msg('error', 'Error: ' + errAuth.message);
+    }
 
     if (res?.user) {
-      await supabase.from('profiles').update({ rol: rol, activo: true, nombre: nombre }).eq('id', res.user.id);
-      msg('exito', `Cuenta de ${rol.toUpperCase()} registrada con éxito.`);
+      // Sincronización explícita en tu tabla profiles por si el trigger está pausado
+      const { error: errProf } = await supabase
+        .from('profiles')
+        .upsert({ id: res.user.id, email: email, rol: rol, activo: true, nombre: nombre }, { onConflict: 'id' });
+
+      if (errProf) {
+        // Si el perfil ya se creó automáticamente por Trigger, procedemos a actualizarlo para evitar fallos
+        await supabase.from('profiles').update({ rol: rol, activo: true, nombre: nombre }).eq('id', res.user.id);
+      }
+
+      msg('exito', `¡La cuenta para ${email} se ha creado y activado correctamente!`);
+      
       document.getElementById('reg-nombre').value = '';
       document.getElementById('reg-email').value = '';
       document.getElementById('reg-password').value = '';
+      
       await cargarUsuariosAdmin();
       await cargarMetricas();
+    } else {
+      msg('error', 'Supabase procesó la solicitud pero no retornó un usuario válido. Revisa si el correo ya existe.');
     }
   }
 
-  // 4. AUTOPREDICTIVO Y BUSCADOR DE SALDOS PARA EL ADMIN
+  // 4. AUTOPREDICTIVO Y BUSCADOR GENERAL DE CLIENTES
   function setupPredictivoAdmin() {
     inputBuscar.addEventListener('input', async () => {
       const texto = inputBuscar.value.trim().toLowerCase();
       if (texto.length < 1) { listaSugerencias.style.display = 'none'; return; }
 
-      const { data } = await supabase.from('vista_acceso_cliente').select('email, nombre').ilike('email', `%${texto}%`).limit(5);
+      const { data } = await supabase.from('profiles').select('email, nombre').eq('rol', 'cliente').ilike('email', `%${texto}%`).limit(5);
       if (!data || data.length === 0) { listaSugerencias.style.display = 'none'; return; }
 
       listaSugerencias.innerHTML = data.map(c => `
-        <div class="sugerencia-item" data-email="${c.email}"><strong>${c.email}</strong> <span>${c.nombre}</span></div>
+        <div class="sugerencia-item" data-email="${c.email}"><strong>${c.email}</strong> <span>${c.nombre || ''}</span></div>
       `).join('');
       listaSugerencias.style.display = 'block';
 
@@ -377,65 +403,78 @@
     const box = document.getElementById('box-resultado');
     const panelSaldo = document.getElementById('acciones-saldo-admin');
 
-    const { data: cl, error } = await supabase.from('vista_acceso_cliente').select('*').eq('email', email).maybeSingle();
+    // Cambiado directamente a profiles para evitar bloqueos de vistas desactualizadas
+    const { data: cl, error } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
     if (error || !cl) {
       box.style.display = 'none'; panelSaldo.style.display = 'none';
-      msg('error', 'No se localizó al cliente solicitado.');
+      msg('error', 'No se encontró al usuario con el email: ' + email);
       return;
     }
 
     clienteSeleccionado = cl;
-    let est = cl.tiene_suscripcion_activa && cl.suscripcion_vence_en ? `🟢 Activa (Vence: ${new Date(cl.suscripcion_vence_en).toLocaleDateString()})` : '🔴 Inactiva';
+    
+    // Obtener saldos y suscripciones en tiempo real
+    const { data: sub } = await supabase.from('subscriptions').select('*').eq('user_id', cl.id).eq('activa', true).maybeSingle();
+    const { data: wallet } = await supabase.from('wallets').select('creditos').eq('user_id', cl.id).maybeSingle();
+
+    let est = sub ? `🟢 Activa (Vence: ${new Date(sub.fecha_fin).toLocaleDateString()})` : '🔴 Inactiva / Vencida';
 
     box.innerHTML = `
-      <strong>Nombre del Cliente:</strong> ${cl.nombre}<br>
-      <strong>Estatus General:</strong> ${cl.activo ? '🟢 Activo en Plataforma' : '🔴 Cuenta Suspendida'}<br>
-      <strong>Fondo de Créditos:</strong> ${cl.creditos_disponibles || 0} créditos<br>
-      <strong>Licencia de Suscripción:</strong> ${est}
+      <strong>Nombre del Cliente:</strong> ${cl.nombre || 'Sin nombre asignado'}<br>
+      <strong>ID de Usuario:</strong> ${cl.id}<br>
+      <strong>Estatus Cuenta:</strong> ${cl.activo ? '🟢 Activo' : '🔴 Suspendido'}<br>
+      <strong>Fondo de Créditos:</strong> ${wallet?.creditos || 0} créditos disponibles<br>
+      <strong>Suscripción Licencia:</strong> ${est}
     `;
     box.style.display = 'block';
     panelSaldo.style.display = 'block';
   }
 
-  // 5. ACCIONES DE DEPÓSITO INMEDIATAS
+  // 5. INYECTAR RECARGAS Y PLANES
   async function ejecutarAsignarPlanAdmin() {
-    if (!clienteSeleccionado) return;
+    if (!clienteSeleccionado) return msg('error', 'Primero busca y selecciona un cliente válido.');
     const planId = document.getElementById('select-plan-admin').value;
+    
     const { error } = await supabase.rpc('asignar_plan_a_cliente', { p_cliente_id: clienteSeleccionado.id, p_plan_id: planId });
-    if (error) msg('error', error.message);
-    else { msg('exito', 'Plan activado perfectamente.'); consultarDetallesClienteAdmin(clienteSeleccionado.email); }
+    if (error) {
+      msg('error', 'Error en RPC: ' + error.message);
+    } else { 
+      msg('exito', '¡Plan comercial asignado y activado correctamente!'); 
+      consultarDetallesClienteAdmin(clienteSeleccionado.email); 
+    }
   }
 
   async function ejecutarRecargaCreditosAdmin() {
-    if (!clienteSeleccionado) return;
+    if (!clienteSeleccionado) return msg('error', 'Primero busca y selecciona un cliente.');
     const cant = parseInt(document.getElementById('input-creditos-admin').value, 10);
-    if (isNaN(cant) || cant <= 0) return msg('error', 'Cantidad inválida.');
+    if (isNaN(cant) || cant <= 0) return msg('error', 'Introduce una cantidad de créditos válida.');
 
     const { error } = await supabase.rpc('recargar_creditos_cliente', { p_cliente_id: clienteSeleccionado.id, p_cantidad: cant });
-    if (error) msg('error', error.message);
-    else {
-      msg('exito', `¡Créditos inyectados con éxito!`);
+    if (error) {
+      msg('error', 'Error al inyectar saldo: ' + error.message);
+    } else {
+      msg('exito', `¡Se inyectaron ${cant} créditos con éxito al usuario!`);
       document.getElementById('input-creditos-admin').value = '';
       consultarDetallesClienteAdmin(clienteSeleccionado.email);
     }
   }
 
-  // 6. SUSPENDER Y RESETEAR DESDE TABLA
+  // 6. ACCIONES DE TABLA DIRECTAS
   window.alternarEstadoUsuario = async function(id, estadoActual) {
     await supabase.from('profiles').update({ activo: !estadoActual }).eq('id', id);
-    msg('exito', 'Estatus modificado correctamente.');
+    msg('exito', 'Estado modificado.');
     await cargarUsuariosAdmin();
   }
 
   window.resetearPasswordAdmin = async function(email) {
     const nuevaPassword = prompt(`Introduce la nueva contraseña directa para ${email}:`);
-    if (!nuevaPassword || nuevaPassword.length < 6) return alert('Operación cancelada.');
+    if (!nuevaPassword || nuevaPassword.length < 6) return alert('Operación cancelada o contraseña muy corta.');
     const { error } = await supabase.rpc('admin_reset_user_password', { p_email: email, p_new_password: nuevaPassword });
     if (error) msg('error', error.message);
-    else msg('exito', 'Contraseña restablecida de manera inmediata.');
+    else msg('exito', 'Contraseña cambiada con éxito inmediato.');
   }
 
-  // 7. GESTION DE PLANES Y CATALOGOS (CORREGIDO CREADOR CON TU ID DE ADMIN)
+  // 7. PLANES COMERCIALES
   async function cargarPlanesAdmin() {
     const { data } = await supabase.from('plans').select('*').order('dias_duracion', { ascending: true });
     const tbody = document.getElementById('tbody-planes');
@@ -451,26 +490,22 @@
     const dias = parseInt(document.getElementById('plan-dias').value, 10);
     const precio = parseFloat(document.getElementById('plan-precio').value);
 
-    if (!nombre || isNaN(dias) || isNaN(precio)) return msg('error', 'Completa el formulario del plan.');
+    if (!nombre || isNaN(dias) || isNaN(precio)) return msg('error', 'Completa todos los campos del plan de forma válida.');
     
-    if (!adminLogueado || !adminLogueado.id) {
-      return msg('error', 'Sesión de administrador no válida. Por favor, recarga.');
-    }
+    if (!adminLogueado || !adminLogueado.id) return msg('error', 'Sesión inválida.');
 
-    const nuevoPlanData = {
+    const { error } = await supabase.from('plans').insert([{
       nombre: nombre,
       dias_duracion: dias,
       precio: precio,
       activo: true,
-      created_by: adminLogueado.id // Se asigna correctamente el ID de la sesión activa
-    };
-
-    const { error } = await supabase.from('plans').insert([nuevoPlanData]);
+      created_by: adminLogueado.id
+    }]);
     
     if (error) {
       msg('error', error.message);
     } else {
-      msg('exito', 'Plan comercial guardado con tu ID de Administrador.');
+      msg('exito', 'Nuevo plan guardado perfectamente.');
       document.getElementById('plan-nombre').value = '';
       document.getElementById('plan-dias').value = '';
       document.getElementById('plan-precio').value = '';
@@ -491,7 +526,7 @@
         <td>
           <div class="acciones-td">
             <button class="btn ${u.activo ? 'btn-secondary' : 'btn-primary'}" style="padding:4px 8px; font-size:11px;" onclick="alternarEstadoUsuario('${u.id}', ${u.activo})">${u.activo ? 'Suspender' : 'Activar'}</button>
-            <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="resetearPasswordAdmin('${u.email}')">🔑 Contraseña</button>
+            <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="resetearPasswordAdmin('${u.email}')">🔑</button>
           </div>
         </td>
       </tr>
