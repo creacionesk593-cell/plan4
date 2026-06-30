@@ -383,13 +383,13 @@
 
     clienteSeleccionado = cl;
     
-    // CORRECCIÓN COMPLETA: Mapeamos los datos directamente desde tu vista "vista_acceso_cliente"
+    // MEJORA: Consulta directa a la vista filtrando por la columna 'email'
     const { data: vistaCliente } = await supabase.from('vista_acceso_cliente')
       .select('tiene_suscripcion_activa, suscripcion_vence_en, creditos_disponibles')
-      .eq('id', cl.id)
+      .eq('email', email)
       .maybeSingle();
 
-    // Extraemos los valores mapeados correctamente según el diseño de tu vista
+    // Sincronización de variables seguras desde la vista
     const tieneSubActiva = vistaCliente?.tiene_suscripcion_activa || false;
     const fechaVence = vistaCliente?.suscripcion_vence_en;
     const creditosActuales = vistaCliente?.creditos_disponibles || 0;
@@ -436,7 +436,7 @@
 
     const { error } = await supabase.rpc('admin_modificar_caducidad', { p_cliente_id: clienteSeleccionado.id, p_nueva_fecha: new Date().toISOString(), p_activa: false });
     if (error) msg('error', error.message);
-    else { msg('exito', 'Suscripción開nula con éxito total.'); consultarDetallesClienteAdmin(clienteSeleccionado.email); }
+    else { msg('exito', 'Suscripción anulada con éxito total.'); consultarDetallesClienteAdmin(clienteSeleccionado.email); }
   }
 
   async function ejecutarAsignarPlanAdmin() {
