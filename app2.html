@@ -1,6 +1,25 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <script>
+    (function(){
+        var dominiosValidos = ["creacionesk593-cell.github.io"];
+        if (dominiosValidos.indexOf(location.hostname) === -1) {
+            document.write(
+                '<div style="background:#0d0d0d;color:#fff;font-family:Arial,sans-serif;' +
+                'min-height:100vh;display:flex;flex-direction:column;align-items:center;' +
+                'justify-content:center;text-align:center;padding:30px;box-sizing:border-box;">' +
+                '<div style="font-size:48px;margin-bottom:10px;">🔒</div>' +
+                '<h1 style="font-size:24px;margin:0 0 10px;">Acceso no autorizado</h1>' +
+                '<p style="color:#aaa;max-width:420px;line-height:1.5;">Esta herramienta solo funciona dentro de su sitio original. ' +
+                'Si copiaste este código a un archivo local o a otro sitio, no se ejecutará.</p>' +
+                '</div>'
+            );
+            window.stop();
+            throw new Error("Dominio no autorizado");
+        }
+    })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Extractor de Bingo - Profesional</title>
@@ -155,7 +174,7 @@
         <div class="nav-brand">TuBingo Pro — Herramientas de Imagen</div>
         <div class="nav-links">
             <a href="dashboard-client.html" class="nav-btn btn-regresar">← Volver al Panel</a>
-            <a href="app1.html" class="nav-btn btn-cambiar">Ir a Módulo de Vectorizar →</a>
+            <a href="app1.html" class="nav-btn btn-cambiar">Ir a Módulo de Herramientas →</a>
         </div>
     </div>
 
