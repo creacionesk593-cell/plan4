@@ -106,6 +106,25 @@
     <div id="mensaje-exito"></div>
 
     <div class="card">
+      <h3>Registrar Nuevo Cliente</h3>
+      <div class="form-group">
+        <label for="reg-nombre-cliente">Nombre Completo</label>
+        <input type="text" id="reg-nombre-cliente" class="input-control" placeholder="Ej. Juan Pérez" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label for="reg-email-cliente">Correo Electrónico</label>
+        <input type="email" id="reg-email-cliente" class="input-control" placeholder="correo@cliente.com" autocomplete="off">
+      </div>
+      <div class="form-group" style="margin-bottom: 0;">
+        <label for="reg-password-cliente">Contraseña Inicial</label>
+        <div class="form-inline">
+          <input type="password" id="reg-password-cliente" class="input-control" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+          <button class="btn" id="btn-crear-cliente" onclick="crearClienteVendedor()">Crear Cliente</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
       <h3>Buscar Cuenta de Cliente</h3>
       <div class="form-group">
         <label for="input-email-buscar">Correo del Cliente</label>
@@ -244,6 +263,37 @@
         listaSugerencias.style.display = 'none';
       }
     });
+  }
+
+  // ALTA DE NUEVOS CLIENTES (el vendedor solo puede crear rol "cliente")
+  window.crearClienteVendedor = async function() {
+    limpiarMensajes()
+    const nombre = document.getElementById('reg-nombre-cliente').value.trim()
+    const email = document.getElementById('reg-email-cliente').value.trim()
+    const password = document.getElementById('reg-password-cliente').value.trim()
+
+    if (!nombre || !email || !password) return mostrarError('Completa nombre, correo y contraseña para crear el cliente.')
+    if (password.length < 6) return mostrarError('La contraseña debe tener al menos 6 caracteres.')
+
+    try {
+      const { error } = await supabase.rpc('crear_usuario_desde_admin', {
+        p_email: email,
+        p_password: password,
+        p_nombre: nombre,
+        p_rol: 'cliente'
+      })
+      if (error) throw error
+
+      mostrarExito(`Cliente ${email} creado correctamente. Ahora puedes venderle un plan abajo.`)
+      document.getElementById('reg-nombre-cliente').value = ''
+      document.getElementById('reg-password-cliente').value = ''
+
+      // Carga automáticamente al cliente recién creado para vender el plan al instante
+      inputBuscar.value = email
+      await consultarDetallesCliente(email)
+    } catch (e) {
+      mostrarError(e.message || 'Error al crear el cliente. Es posible que el correo ya esté registrado.')
+    }
   }
 
   window.buscarClienteDirecto = function() {
