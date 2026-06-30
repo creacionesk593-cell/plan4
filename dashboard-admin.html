@@ -56,7 +56,7 @@
     .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--gris-600); margin-bottom: 4px; }
     .input-control { width: 100%; padding: 10px 12px; border: 1.5px solid var(--gris-200); border-radius: 6px; font-size: 13px; outline: none; }
     .input-control:focus { border-color: var(--azul); }
-    .form-row { display: flex; gap: 12px; }
+    .form-row { display: flex; gap: 12px; align-items: flex-end; }
 
     .sugerencias-lista {
       position: absolute; top: 100%; left: 0; right: 0;
@@ -95,7 +95,7 @@
 <body>
 
   <header>
-    <div class="brand">👑 Consola de Administración — TuBingo Pro</div>
+    <div class="brand">👑 Consola de Administración Suprema — TuBingo Pro</div>
     <button class="btn btn-danger" onclick="cerrarSesionAdmin()">Cerrar Sesión Global</button>
   </header>
 
@@ -103,7 +103,6 @@
     <div id="error-global"></div>
     <div id="exito-global"></div>
 
-    <!-- ACCESOS CORPORATIVOS -->
     <div class="card">
       <h2>Acceso Corporativo Directo (Modo Dios)</h2>
       <div class="apps-master">
@@ -113,7 +112,6 @@
       </div>
     </div>
 
-    <!-- METRICAS -->
     <div class="grid-metricas">
       <div class="metrica-card"><p>Clientes Registrados</p><h3 id="m-clientes">...</h3></div>
       <div class="metrica-card"><p>Vendedores Activos</p><h3 id="m-vendedores">...</h3></div>
@@ -121,12 +119,11 @@
       <div class="metrica-card"><p>Total Matrices en Nube</p><h3 id="m-matrices">...</h3></div>
     </div>
 
-    <!-- GESTOR OPERATIVO DE CLIENTES -->
     <div class="card">
-      <h2>Buscador y Gestor Operativo de Clientes</h2>
+      <h2>Buscador y Modificador Quirúrgico de Clientes</h2>
       <div class="form-group">
         <div class="form-row">
-          <input type="email" id="input-email-buscar" class="input-control" placeholder="Escribe el email del cliente a gestionar..." autocomplete="off">
+          <input type="email" id="input-email-buscar" class="input-control" placeholder="Escribe el email del cliente a modificar..." autocomplete="off">
           <button class="btn btn-primary" id="btn-buscar-cliente">Buscar Cliente</button>
         </div>
         <div id="lista-sugerencias" class="sugerencias-lista"></div>
@@ -134,29 +131,51 @@
 
       <div id="box-resultado" class="info-busqueda"></div>
 
-      <!-- Acciones de saldo rápidas -->
       <div id="acciones-saldo-admin" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gris-200);">
-        <div class="form-row">
-          <div style="flex: 1;">
-            <label style="font-size: 12px; font-weight:600; color:var(--gris-600);">Asignar Plan Comercial</label>
-            <div class="form-row" style="margin-top:4px;">
-              <select id="select-plan-admin" class="input-control"></select>
-              <button class="btn btn-primary" id="btn-activar-plan-admin">Activar Plan</button>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+          
+          <div style="border-right: 1px solid var(--gris-200); padding-right: 16px;">
+            <h4 style="font-size: 13px; font-weight: 700; margin-bottom: 12px; color: var(--azul);">⏱️ Control de Licencia y Caducidad</h4>
+            <div class="form-group">
+              <label>Asignar Nuevo Plan Completo</label>
+              <div class="form-row">
+                <select id="select-plan-admin" class="input-control"></select>
+                <button class="btn btn-primary" id="btn-activar-plan-admin">Activar</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Forzar Fecha de Vencimiento Manual</label>
+              <div class="form-row">
+                <input type="date" id="input-fecha-manual" class="input-control">
+                <button class="btn btn-secondary" id="btn-forzar-fecha" onclick="forzarFechaCaducidad()">Forzar Fecha</button>
+              </div>
+            </div>
+            <button class="btn btn-danger" style="width: 100%; justify-content: center; margin-top: 10px;" onclick="anularSuscripcionTotal()">🚫 Anular e Inactivar Suscripción</button>
+          </div>
+
+          <div>
+            <h4 style="font-size: 13px; font-weight: 700; margin-bottom: 12px; color: var(--verde);">💰 Control de Créditos y Monedero</h4>
+            <div class="form-group">
+              <label>Sumar Créditos Sueltos</label>
+              <div class="form-row">
+                <input type="number" id="input-creditos-admin" class="input-control" placeholder="Cant. Ej. 100" min="1">
+                <button class="btn btn-primary" id="btn-add-creditos-admin">Añadir</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Establecer Saldo de Créditos Exacto (Escribe 0 para vaciar)</label>
+              <div class="form-row">
+                <input type="number" id="input-creditos-exactos" class="input-control" placeholder="Ej. 0 o 50">
+                <button class="btn btn-danger" onclick="fijarCreditosExactos()">Fijar Saldo</button>
+              </div>
             </div>
           </div>
-          <div style="flex: 1;">
-            <label style="font-size: 12px; font-weight:600; color:var(--gris-600);">Inyectar Créditos de Uso</label>
-            <div class="form-row" style="margin-top:4px;">
-              <input type="number" id="input-creditos-admin" class="input-control" placeholder="Cant. Ej. 100" min="1">
-              <button class="btn btn-primary" id="btn-add-creditos-admin">Añadir</button>
-            </div>
-          </div>
+
         </div>
       </div>
     </div>
 
     <div class="seccion-doble">
-      <!-- REGLAS DE DESCUENTO POR APP -->
       <div class="card">
         <h2>Reglas de Descuento de Créditos</h2>
         <div class="form-group">
@@ -175,7 +194,6 @@
         </div>
       </div>
 
-      <!-- CREACIÓN DE NUEVAS CUENTAS (OPTIMIZADO POR RPC) -->
       <div class="card">
         <h2>Creación de Cuentas de Trabajo</h2>
         <div class="form-row">
@@ -205,7 +223,6 @@
     </div>
 
     <div class="seccion-doble">
-      <!-- CATALOGO DE PLANES COMERCIALES -->
       <div class="card">
         <h2>Estructura de Planes Comerciales</h2>
         <div class="form-row" style="margin-bottom: 12px;">
@@ -226,9 +243,8 @@
         </div>
       </div>
 
-      <!-- CONTROL OPERATIVO DE USUARIOS -->
       <div class="card">
-        <h2>Control Operativo de Usuarios</h2>
+        <h2>Control Operativo de Usuarios (Bloqueo Total)</h2>
         <div class="table-container" style="max-height: 320px; overflow-y: auto;">
           <table>
             <thead>
@@ -274,10 +290,10 @@
     const el = document.getElementById(tipo === 'error' ? 'error-global' : 'exito-global');
     el.textContent = texto; el.style.display = 'block';
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    setTimeout(() => el.style.display = 'none', 6000);
+    setTimeout(() => el.style.display = 'none', 5000);
   }
 
-  // 1. METRICAS
+  // METRICAS
   async function cargarMetricas() {
     const { count: c } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('rol', 'cliente');
     const { count: v } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('rol', 'vendedor');
@@ -290,11 +306,10 @@
     document.getElementById('m-matrices').textContent = m || 0;
   }
 
-  // 2. REGLAS DE DESCUENTO
+  // REGLAS
   async function cargarReglasReguladoras() {
     const { data: s1 } = await supabase.from('system_settings').select('value').eq('key', 'costo_app1').maybeSingle();
     const { data: s2 } = await supabase.from('system_settings').select('value').eq('key', 'costo_app2').maybeSingle();
-    
     document.getElementById('cfg-app1').value = s1?.value || 2;
     document.getElementById('cfg-app2').value = s2?.value || 2;
   }
@@ -302,46 +317,27 @@
   async function actualizarRegla(llave, inputId) {
     const valor = document.getElementById(inputId).value.trim();
     if (!valor) return msg('error', 'El valor no puede estar vacío.');
-
     const { error } = await supabase.from('system_settings').upsert({ key: llave, value: valor }, { onConflict: 'key' });
-    if (error) msg('error', 'Error: ' + error.message);
-    else { msg('exito', 'Regla actualizada correctamente.'); await cargarReglasReguladoras(); }
+    if (error) msg('error', error.message);
+    else { msg('exito', 'Regla actualizada.'); await cargarReglasReguladoras(); }
   }
 
-  // 3. REGISTRO SEGURO MEDIANTE LA NUEVA FUNCIÓN RPC
+  // ALTA DE USUARIOS SIN COMPLICACIONES
   async function registrarUsuario() {
     const nombre = document.getElementById('reg-nombre').value.trim();
     const email = document.getElementById('reg-email').value.trim();
     const password = document.getElementById('reg-password').value.trim();
     const rol = document.getElementById('reg-rol').value;
 
-    if (!nombre || !email || !password) return msg('error', 'Completa todos los campos obligatorios.');
-    if (password.length < 6) return msg('error', 'La contraseña debe tener mínimo 6 caracteres.');
+    if (!nombre || !email || !password) return msg('error', 'Completa todos los campos.');
+    const { data, error } = await supabase.rpc('crear_usuario_desde_admin', { p_email: email, p_password: password, p_nombre: nombre, p_rol: rol });
 
-    // Llamada directa al backend RPC evitando choques de tokens y sesiones cruzadas
-    const { data: nuevoUid, error: errRpc } = await supabase.rpc('crear_usuario_desde_admin', {
-      p_email: email,
-      p_password: password,
-      p_nombre: nombre,
-      p_rol: rol
-    });
-
-    if (errRpc) {
-      console.error(errRpc);
-      return msg('error', 'Error al dar de alta: ' + errRpc.message);
-    }
-
-    msg('exito', `¡Cuenta de ${rol.toUpperCase()} (${email}) creada con éxito total!`);
-    
-    document.getElementById('reg-nombre').value = '';
-    document.getElementById('reg-email').value = '';
-    document.getElementById('reg-password').value = '';
-    
-    await cargarUsuariosAdmin();
-    await cargarMetricas();
+    if (error) return msg('error', error.message);
+    msg('exito', `Alta exitosa para ${email}`);
+    await cargarUsuariosAdmin(); await cargarMetricas();
   }
 
-  // 4. AUTOPREDICTIVO DE CLIENTES
+  // PREDICTIVO & DETALLES DEL CLIENTE
   function setupPredictivoAdmin() {
     inputBuscar.addEventListener('input', async () => {
       const texto = inputBuscar.value.trim().toLowerCase();
@@ -350,109 +346,118 @@
       const { data } = await supabase.from('profiles').select('email, nombre').eq('rol', 'cliente').ilike('email', `%${texto}%`).limit(5);
       if (!data || data.length === 0) { listaSugerencias.style.display = 'none'; return; }
 
-      listaSugerencias.innerHTML = data.map(c => `
-        <div class="sugerencia-item" data-email="${c.email}"><strong>${c.email}</strong> <span>${c.nombre || ''}</span></div>
-      `).join('');
+      listaSugerencias.innerHTML = data.map(c => `<div class="sugerencia-item" data-email="${c.email}"><strong>${c.email}</strong> <span>${c.nombre || ''}</span></div>`).join('');
       listaSugerencias.style.display = 'block';
 
       document.querySelectorAll('.sugerencia-item').forEach(item => {
         item.addEventListener('click', () => {
-          const mail = item.getAttribute('data-email');
-          inputBuscar.value = mail;
+          inputBuscar.value = item.getAttribute('data-email');
           listaSugerencias.style.display = 'none';
-          consultarDetallesClienteAdmin(mail);
+          consultarDetallesClienteAdmin(inputBuscar.value);
         });
       });
-    });
-
-    document.addEventListener('click', (e) => {
-      if (e.target !== inputBuscar) listaSugerencias.style.display = 'none';
     });
   }
 
   async function buscarClienteDirectoAdmin() {
-    const email = inputBuscar.value.trim();
-    if (!email) return msg('error', 'Escribe un email válido.');
-    consultarDetallesClienteAdmin(email);
+    if (!inputBuscar.value.trim()) return msg('error', 'Escribe un email.');
+    consultarDetallesClienteAdmin(inputBuscar.value.trim());
   }
 
   async function consultarDetallesClienteAdmin(email) {
     const box = document.getElementById('box-resultado');
-    const panelSaldo = document.getElementById('acciones-saldo-admin');
+    const panelAcciones = document.getElementById('acciones-saldo-admin');
 
-    const { data: cl, error } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
-    if (error || !cl) {
-      box.style.display = 'none'; panelSaldo.style.display = 'none';
-      msg('error', 'No se localizó al usuario: ' + email);
-      return;
-    }
+    const { data: cl } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
+    if (!cl) { msg('error', 'No se encontró el usuario.'); return; }
 
     clienteSeleccionado = cl;
-    
-    const { data: sub } = await supabase.from('subscriptions').select('*').eq('user_id', cl.id).eq('activa', true).maybeSingle();
+    const { data: sub } = await supabase.from('subscriptions').select('*').eq('user_id', cl.id).maybeSingle();
     const { data: wallet } = await supabase.from('wallets').select('creditos').eq('user_id', cl.id).maybeSingle();
 
-    let est = sub ? `🟢 Activa (Vence: ${new Date(sub.fecha_fin).toLocaleDateString()})` : '🔴 Inactiva / Vencida';
+    let est = (sub && sub.activa && new Date(sub.vence_en) > new Date()) 
+      ? `🟢 Activa (Vence: ${new Date(sub.vence_en).toLocaleDateString()})` 
+      : '🔴 Sin plan / Vencida u Oculta';
 
     box.innerHTML = `
-      <strong>Nombre del Cliente:</strong> ${cl.nombre || 'Sin nombre asignado'}<br>
-      <strong>ID Único:</strong> ${cl.id}<br>
-      <strong>Estatus Cuenta:</strong> ${cl.activo ? '🟢 Activo' : '🔴 Suspendido'}<br>
-      <strong>Créditos en Monedero:</strong> ${wallet?.creditos || 0} créditos disponibles<br>
-      <strong>Licencia de Suscripción:</strong> ${est}
+      <strong>Nombre:</strong> ${cl.nombre || 'Sin nombre'} | <strong>ID:</strong> ${cl.id}<br>
+      <strong>Estatus Acceso:</strong> ${cl.activo ? '🟢 Permitido' : '🔴 Bloqueado/Suspendido'}<br>
+      <strong>Créditos Actuales:</strong> ${wallet?.creditos || 0} créditos disponibles<br>
+      <strong>Suscripción:</strong> ${est}
     `;
     box.style.display = 'block';
-    panelSaldo.style.display = 'block';
+    panelAcciones.style.display = 'block';
   }
 
-  // 5. INYECTAR RECARGAS Y PLANES
+  // --- NUEVAS FUNCIONES MODO DIOS ADMINISTRADOR ---
+  
+  window.fijarCreditosExactos = async function() {
+    if (!clienteSeleccionado) return;
+    const cant = parseInt(document.getElementById('input-creditos-exactos').value, 10);
+    if (isNaN(cant) || cant < 0) return msg('error', 'Pon un número de créditos válido.');
+
+    const { error } = await supabase.rpc('admin_ajustar_creditos', { p_cliente_id: clienteSeleccionado.id, p_nuevos_creditos: cant });
+    if (error) msg('error', error.message);
+    else { msg('exito', 'Saldo de créditos reajustado.'); consultarDetallesClienteAdmin(clienteSeleccionado.email); }
+  }
+
+  window.forzarFechaCaducidad = async function() {
+    if (!clienteSeleccionado) return;
+    const fechaInput = document.getElementById('input-fecha-manual').value;
+    if (!fechaInput) return msg('error', 'Elige una fecha del calendario.');
+
+    const { error } = await supabase.rpc('admin_modificar_caducidad', { p_cliente_id: clienteSeleccionado.id, p_nueva_fecha: fechaInput + 'T23:59:59', p_activa: true });
+    if (error) msg('error', error.message);
+    else { msg('exito', 'Fecha de vencimiento modificada.'); consultarDetallesClienteAdmin(clienteSeleccionado.email); }
+  }
+
+  window.anularSuscripcionTotal = async function() {
+    if (!clienteSeleccionado) return;
+    if (!confirm('¿Estás seguro de anular por completo el tiempo de este usuario? Ya no tendrá acceso.')) return;
+
+    const { error } = await supabase.rpc('admin_modificar_caducidad', { p_cliente_id: clienteSeleccionado.id, p_nueva_fecha: new Date().toISOString(), p_activa: false });
+    if (error) msg('error', error.message);
+    else { msg('exito', 'Suscripción anulada con éxito total.'); consultarDetallesClienteAdmin(clienteSeleccionado.email); }
+  }
+
   async function ejecutarAsignarPlanAdmin() {
-    if (!clienteSeleccionado) return msg('error', 'Selecciona un cliente válido.');
+    if (!clienteSeleccionado) return;
     const planId = document.getElementById('select-plan-admin').value;
-    
     const { error } = await supabase.rpc('asignar_plan_a_cliente', { p_cliente_id: clienteSeleccionado.id, p_plan_id: planId });
-    if (error) msg('error', 'Error: ' + error.message);
-    else { msg('exito', '¡Plan activado con éxito!'); consultarDetallesClienteAdmin(clienteSeleccionado.email); }
+    if (error) msg('error', error.message);
+    else { msg('exito', '¡Plan activado!'); consultarDetallesClienteAdmin(clienteSeleccionado.email); }
   }
 
   async function ejecutarRecargaCreditosAdmin() {
-    if (!clienteSeleccionado) return msg('error', 'Selecciona un cliente.');
+    if (!clienteSeleccionado) return;
     const cant = parseInt(document.getElementById('input-creditos-admin').value, 10);
-    if (isNaN(cant) || cant <= 0) return msg('error', 'Cantidad inválida.');
-
     const { error } = await supabase.rpc('recargar_creditos_cliente', { p_cliente_id: clienteSeleccionado.id, p_cantidad: cant });
-    if (error) msg('error', 'Error: ' + error.message);
-    else {
-      msg('exito', `¡Créditos inyectados correctamente!`);
-      document.getElementById('input-creditos-admin').value = '';
-      consultarDetallesClienteAdmin(clienteSeleccionado.email);
-    }
+    if (error) msg('error', error.message);
+    else { msg('exito', 'Créditos agregados.'); consultarDetallesClienteAdmin(clienteSeleccionado.email); }
   }
 
-  // 6. ACCIONES DE TABLA DIRECTAS
+  // SUSPENDER / ACTIVAR LOGIN TOTAL DEL PROFIL
   window.alternarEstadoUsuario = async function(id, estadoActual) {
     await supabase.from('profiles').update({ activo: !estadoActual }).eq('id', id);
-    msg('exito', 'Estado actualizado.');
+    msg('exito', 'Estado de acceso modificado.');
     await cargarUsuariosAdmin();
+    if (clienteSeleccionado && clienteSeleccionado.id === id) consultarDetallesClienteAdmin(clienteSeleccionado.email);
   }
 
   window.resetearPasswordAdmin = async function(email) {
-    const nuevaPassword = prompt(`Introduce la nueva contraseña directa para ${email}:`);
-    if (!nuevaPassword || nuevaPassword.length < 6) return alert('Operación cancelada o muy corta.');
+    const nuevaPassword = prompt(`Nueva contraseña para ${email}:`);
+    if (!nuevaPassword || nuevaPassword.length < 6) return alert('Contraseña muy corta o vacía.');
     const { error } = await supabase.rpc('admin_reset_user_password', { p_email: email, p_new_password: nuevaPassword });
     if (error) msg('error', error.message);
-    else msg('exito', 'Contraseña restablecida de inmediato.');
+    else msg('exito', 'Contraseña cambiada.');
   }
 
-  // 7. PLANES COMERCIALES
+  // PLANES
   async function cargarPlanesAdmin() {
     const { data } = await supabase.from('plans').select('*').order('dias_duracion', { ascending: true });
-    const tbody = document.getElementById('tbody-planes');
-    const select = document.getElementById('select-plan-admin');
-    
     if (!data) return;
-    tbody.innerHTML = data.map(p => `<tr><td><strong>${p.nombre}</strong></td><td>${p.dias_duracion} días</td><td>$${p.precio}</td><td>${p.activo ? '🟢' : '🔴'}</td></tr>`).join('');
-    select.innerHTML = data.map(p => `<option value="${p.id}">${p.nombre} ($${p.precio})</option>`).join('');
+    document.getElementById('tbody-planes').innerHTML = data.map(p => `<tr><td><strong>${p.nombre}</strong></td><td>${p.dias_duracion} días</td><td>$${p.precio}</td><td>${p.activo ? '🟢' : '🔴'}</td></tr>`).join('');
+    document.getElementById('select-plan-admin').innerHTML = data.map(p => `<option value="${p.id}">${p.nombre} (${p.dias_duracion} d)</option>`).join('');
   }
 
   async function crearNuevoPlan() {
@@ -460,34 +465,22 @@
     const dias = parseInt(document.getElementById('plan-dias').value, 10);
     const precio = parseFloat(document.getElementById('plan-precio').value);
 
-    if (!nombre || isNaN(dias) || isNaN(precio)) return msg('error', 'Completa el formulario del plan.');
-    if (!adminLogueado || !adminLogueado.id) return msg('error', 'Sesión no válida.');
-
-    const { error } = await supabase.from('plans').insert([{
-      nombre: nombre,
-      dias_duracion: dias,
-      precio: precio,
-      activo: true,
-      created_by: adminLogueado.id
-    }]);
-    
+    const { error } = await supabase.from('plans').insert([{ nombre, dias_duracion: dias, precio, activo: true, created_by: adminLogueado.id }]);
     if (error) msg('error', error.message);
-    else { msg('exito', 'Plan guardado perfectamente.'); document.getElementById('plan-nombre').value = ''; document.getElementById('plan-dias').value = ''; document.getElementById('plan-precio').value = ''; await cargarPlanesAdmin(); }
+    else { msg('exito', 'Plan creado.'); await cargarPlanesAdmin(); }
   }
 
   async function cargarUsuariosAdmin() {
     const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-    const tbody = document.getElementById('tbody-usuarios');
     if (!data) return;
-
-    tbody.innerHTML = data.map(u => `
+    document.getElementById('tbody-usuarios').innerHTML = data.map(u => `
       <tr>
         <td><div><strong>${u.nombre || 'Sin nombre'}</strong></div><div style="font-size:11px;color:var(--gris-600);">${u.email}</div></td>
         <td><span style="text-transform:uppercase; font-size:11px; font-weight:700; color:${u.rol === 'administrador' ? 'var(--rojo)' : 'var(--azul)'}">${u.rol}</span></td>
         <td>${u.activo ? '<span style="color:var(--verde);">ACTIVO</span>' : '<span style="color:var(--rojo);">SUSPENDIDO</span>'}</td>
         <td>
           <div class="acciones-td">
-            <button class="btn ${u.activo ? 'btn-secondary' : 'btn-primary'}" style="padding:4px 8px; font-size:11px;" onclick="alternarEstadoUsuario('${u.id}', ${u.activo})">${u.activo ? 'Suspender' : 'Activar'}</button>
+            <button class="btn ${u.activo ? 'btn-secondary' : 'btn-primary'}" style="padding:4px 8px; font-size:11px;" onclick="alternarEstadoUsuario('${u.id}', ${u.activo})">${u.activo ? 'Suspender Acceso' : 'Activar Acceso'}</button>
             <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="resetearPasswordAdmin('${u.email}')">🔑</button>
           </div>
         </td>
