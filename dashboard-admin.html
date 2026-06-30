@@ -103,6 +103,7 @@
     <div id="error-global"></div>
     <div id="exito-global"></div>
 
+    <!-- ACCESOS CORPORATIVOS -->
     <div class="card">
       <h2>Acceso Corporativo Directo (Modo Dios)</h2>
       <div class="apps-master">
@@ -112,6 +113,7 @@
       </div>
     </div>
 
+    <!-- METRICAS -->
     <div class="grid-metricas">
       <div class="metrica-card"><p>Clientes Registrados</p><h3 id="m-clientes">...</h3></div>
       <div class="metrica-card"><p>Vendedores Activos</p><h3 id="m-vendedores">...</h3></div>
@@ -119,6 +121,7 @@
       <div class="metrica-card"><p>Total Matrices en Nube</p><h3 id="m-matrices">...</h3></div>
     </div>
 
+    <!-- GESTOR OPERATIVO DE CLIENTES AVANZADO -->
     <div class="card">
       <h2>Buscador y Modificador Quirúrgico de Clientes</h2>
       <div class="form-group">
@@ -131,9 +134,11 @@
 
       <div id="box-resultado" class="info-busqueda"></div>
 
+      <!-- PANEL DE CONTROL TOTAL DE ACCIONES -->
       <div id="acciones-saldo-admin" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gris-200);">
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
           
+          <!-- SECCIÓN DE TIEMPO / LICENCIAS -->
           <div style="border-right: 1px solid var(--gris-200); padding-right: 16px;">
             <h4 style="font-size: 13px; font-weight: 700; margin-bottom: 12px; color: var(--azul);">⏱️ Control de Licencia y Caducidad</h4>
             <div class="form-group">
@@ -153,6 +158,7 @@
             <button class="btn btn-danger" style="width: 100%; justify-content: center; margin-top: 10px;" onclick="anularSuscripcionTotal()">🚫 Anular e Inactivar Suscripción</button>
           </div>
 
+          <!-- SECCIÓN DE MONEDERO / CRÉDITOS -->
           <div>
             <h4 style="font-size: 13px; font-weight: 700; margin-bottom: 12px; color: var(--verde);">💰 Control de Créditos y Monedero</h4>
             <div class="form-group">
@@ -176,6 +182,7 @@
     </div>
 
     <div class="seccion-doble">
+      <!-- REGLAS DE DESCUENTO -->
       <div class="card">
         <h2>Reglas de Descuento de Créditos</h2>
         <div class="form-group">
@@ -194,6 +201,7 @@
         </div>
       </div>
 
+      <!-- CREACIÓN DE NUEVAS CUENTAS (OPTIMIZADO POR RPC) -->
       <div class="card">
         <h2>Creación de Cuentas de Trabajo</h2>
         <div class="form-row">
@@ -223,6 +231,7 @@
     </div>
 
     <div class="seccion-doble">
+      <!-- CATALOGO DE PLANES COMERCIALES -->
       <div class="card">
         <h2>Estructura de Planes Comerciales</h2>
         <div class="form-row" style="margin-bottom: 12px;">
@@ -243,6 +252,7 @@
         </div>
       </div>
 
+      <!-- CONTROL OPERATIVO DE USUARIOS -->
       <div class="card">
         <h2>Control Operativo de Usuarios (Bloqueo Total)</h2>
         <div class="table-container" style="max-height: 320px; overflow-y: auto;">
@@ -322,7 +332,7 @@
     else { msg('exito', 'Regla actualizada.'); await cargarReglasReguladoras(); }
   }
 
-  // ALTA DE USUARIOS SIN COMPLICACIONES
+  // ALTA DE USUARIOS
   async function registrarUsuario() {
     const nombre = document.getElementById('reg-nombre').value.trim();
     const email = document.getElementById('reg-email').value.trim();
@@ -372,8 +382,12 @@
     if (!cl) { msg('error', 'No se encontró el usuario.'); return; }
 
     clienteSeleccionado = cl;
-    const { data: sub } = await supabase.from('subscriptions').select('*').eq('user_id', cl.id).maybeSingle();
-    const { data: wallet } = await supabase.from('wallets').select('creditos').eq('user_id', cl.id).maybeSingle();
+    
+    // CORRECCIÓN CLAVE: Saneamos el UUID forzándolo a Texto Limpio para evitar desajustes de tipo en Supabase
+    const userIdLimpio = String(cl.id).trim();
+
+    const { data: sub } = await supabase.from('subscriptions').select('*').eq('user_id', userIdLimpio).maybeSingle();
+    const { data: wallet } = await supabase.from('wallets').select('creditos').eq('user_id', userIdLimpio).maybeSingle();
 
     let est = (sub && sub.activa && new Date(sub.vence_en) > new Date()) 
       ? `🟢 Activa (Vence: ${new Date(sub.vence_en).toLocaleDateString()})` 
@@ -389,7 +403,7 @@
     panelAcciones.style.display = 'block';
   }
 
-  // --- NUEVAS FUNCIONES MODO DIOS ADMINISTRADOR ---
+  // --- CONTROLES ADMINISTRATIVOS SUPREMOS ---
   
   window.fijarCreditosExactos = async function() {
     if (!clienteSeleccionado) return;
@@ -436,7 +450,7 @@
     else { msg('exito', 'Créditos agregados.'); consultarDetallesClienteAdmin(clienteSeleccionado.email); }
   }
 
-  // SUSPENDER / ACTIVAR LOGIN TOTAL DEL PROFIL
+  // SUSPENDER / ACTIVAR LOGIN TOTAL DEL PROFILE
   window.alternarEstadoUsuario = async function(id, estadoActual) {
     await supabase.from('profiles').update({ activo: !estadoActual }).eq('id', id);
     msg('exito', 'Estado de acceso modificado.');
