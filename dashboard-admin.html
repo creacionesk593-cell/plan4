@@ -201,7 +201,7 @@
         </div>
       </div>
 
-      <!-- CREACIÓN DE NUEVAS CUENTAS (OPTIMIZADO POR RPC) -->
+      <!-- CREACIÓN DE NUEVAS CUENTAS -->
       <div class="card">
         <h2>Creación de Cuentas de Trabajo</h2>
         <div class="form-row">
@@ -383,20 +383,25 @@
 
     clienteSeleccionado = cl;
     
-    // CORRECCIÓN CLAVE: Saneamos el UUID forzándolo a Texto Limpio para evitar desajustes de tipo en Supabase
-    const userIdLimpio = String(cl.id).trim();
+    // CORRECCIÓN COMPLETA: Mapeamos los datos directamente desde tu vista "vista_acceso_cliente"
+    const { data: vistaCliente } = await supabase.from('vista_acceso_cliente')
+      .select('tiene_suscripcion_activa, suscripcion_vence_en, creditos_disponibles')
+      .eq('id', cl.id)
+      .maybeSingle();
 
-    const { data: sub } = await supabase.from('subscriptions').select('*').eq('user_id', userIdLimpio).maybeSingle();
-    const { data: wallet } = await supabase.from('wallets').select('creditos').eq('user_id', userIdLimpio).maybeSingle();
+    // Extraemos los valores mapeados correctamente según el diseño de tu vista
+    const tieneSubActiva = vistaCliente?.tiene_suscripcion_activa || false;
+    const fechaVence = vistaCliente?.suscripcion_vence_en;
+    const creditosActuales = vistaCliente?.creditos_disponibles || 0;
 
-    let est = (sub && sub.activa && new Date(sub.vence_en) > new Date()) 
-      ? `🟢 Activa (Vence: ${new Date(sub.vence_en).toLocaleDateString()})` 
+    let est = (tieneSubActiva && fechaVence && new Date(fechaVence) > new Date()) 
+      ? `🟢 Activa (Vence: ${new Date(fechaVence).toLocaleDateString()})` 
       : '🔴 Sin plan / Vencida u Oculta';
 
     box.innerHTML = `
       <strong>Nombre:</strong> ${cl.nombre || 'Sin nombre'} | <strong>ID:</strong> ${cl.id}<br>
       <strong>Estatus Acceso:</strong> ${cl.activo ? '🟢 Permitido' : '🔴 Bloqueado/Suspendido'}<br>
-      <strong>Créditos Actuales:</strong> ${wallet?.creditos || 0} créditos disponibles<br>
+      <strong>Créditos Actuales:</strong> ${creditosActuales} créditos disponibles<br>
       <strong>Suscripción:</strong> ${est}
     `;
     box.style.display = 'block';
@@ -431,7 +436,7 @@
 
     const { error } = await supabase.rpc('admin_modificar_caducidad', { p_cliente_id: clienteSeleccionado.id, p_nueva_fecha: new Date().toISOString(), p_activa: false });
     if (error) msg('error', error.message);
-    else { msg('exito', 'Suscripción anulada con éxito total.'); consultarDetallesClienteAdmin(clienteSeleccionado.email); }
+    else { msg('exito', 'Suscripción開nula con éxito total.'); consultarDetallesClienteAdmin(clienteSeleccionado.email); }
   }
 
   async function ejecutarAsignarPlanAdmin() {
@@ -450,7 +455,6 @@
     else { msg('exito', 'Créditos agregados.'); consultarDetallesClienteAdmin(clienteSeleccionado.email); }
   }
 
-  // SUSPENDER / ACTIVAR LOGIN TOTAL DEL PROFILE
   window.alternarEstadoUsuario = async function(id, estadoActual) {
     await supabase.from('profiles').update({ activo: !estadoActual }).eq('id', id);
     msg('exito', 'Estado de acceso modificado.');
@@ -466,7 +470,6 @@
     else msg('exito', 'Contraseña cambiada.');
   }
 
-  // PLANES
   async function cargarPlanesAdmin() {
     const { data } = await supabase.from('plans').select('*').order('dias_duracion', { ascending: true });
     if (!data) return;
