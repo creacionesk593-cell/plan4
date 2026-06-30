@@ -20,6 +20,28 @@
         }
     })();
     </script>
+    <style id="guard-style">body{visibility:hidden}</style>
+    <script type="module">
+        import { guardAcceso, verificarAccesoApp } from './configuracion.js'
+
+        ;(async function(){
+            // 1. Verifica sesión activa y que el rol sea cliente o administrador
+            const profile = await guardAcceso(['cliente', 'administrador'])
+            if (!profile) return // guardAcceso ya redirige a index.html
+
+            // 2. Si es cliente, además debe tener crédito o suscripción activa
+            if (profile.rol === 'cliente') {
+                const acceso = await verificarAccesoApp(profile.id)
+                if (!acceso.puede) {
+                    window.location.href = 'dashboard-client.html'
+                    return
+                }
+            }
+
+            // 3. Acceso autorizado: mostrar el contenido de la página
+            document.body.style.visibility = 'visible'
+        })()
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDF Vectorizador Pro - Extractor de Imagen Limpio</title>
