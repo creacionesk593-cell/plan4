@@ -103,7 +103,6 @@
     <div id="error-global"></div>
     <div id="exito-global"></div>
 
-    <!-- ACCESOS CORPORATIVOS -->
     <div class="card">
       <h2>Acceso Corporativo Directo (Modo Dios)</h2>
       <div class="apps-master">
@@ -113,7 +112,6 @@
       </div>
     </div>
 
-    <!-- METRICAS -->
     <div class="grid-metricas">
       <div class="metrica-card"><p>Clientes Registrados</p><h3 id="m-clientes">...</h3></div>
       <div class="metrica-card"><p>Vendedores Activos</p><h3 id="m-vendedores">...</h3></div>
@@ -121,7 +119,6 @@
       <div class="metrica-card"><p>Total Matrices en Nube</p><h3 id="m-matrices">...</h3></div>
     </div>
 
-    <!-- GESTOR OPERATIVO DE CLIENTES AVANZADO -->
     <div class="card">
       <h2>Buscador y Modificador Quirúrgico de Clientes</h2>
       <div class="form-group">
@@ -134,46 +131,31 @@
 
       <div id="box-resultado" class="info-busqueda"></div>
 
-      <!-- PANEL DE CONTROL TOTAL DE ACCIONES -->
       <div id="acciones-saldo-admin" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gris-200);">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+        <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
           
-          <!-- SECCIÓN DE TIEMPO / LICENCIAS -->
-          <div style="border-right: 1px solid var(--gris-200); padding-right: 16px;">
-            <h4 style="font-size: 13px; font-weight: 700; margin-bottom: 12px; color: var(--azul);">⏱️ Control de Licencia y Caducidad</h4>
-            <div class="form-group">
-              <label>Asignar Nuevo Plan Completo</label>
-              <div class="form-row">
-                <select id="select-plan-admin" class="input-control"></select>
-                <button class="btn btn-primary" id="btn-activar-plan-admin">Activar</button>
-              </div>
-            </div>
-            <div class="form-group">
-              <label>Forzar Fecha de Vencimiento Manual</label>
-              <div class="form-row">
-                <input type="date" id="input-fecha-manual" class="input-control">
-                <button class="btn btn-secondary" id="btn-forzar-fecha" onclick="forzarFechaCaducidad()">Forzar Fecha</button>
-              </div>
-            </div>
-            <button class="btn btn-danger" style="width: 100%; justify-content: center; margin-top: 10px;" onclick="anularSuscripcionTotal()">🚫 Anular e Inactivar Suscripción</button>
-          </div>
-
-          <!-- SECCIÓN DE MONEDERO / CRÉDITOS -->
           <div>
-            <h4 style="font-size: 13px; font-weight: 700; margin-bottom: 12px; color: var(--verde);">💰 Control de Créditos y Monedero</h4>
-            <div class="form-group">
-              <label>Sumar Créditos Sueltos</label>
-              <div class="form-row">
-                <input type="number" id="input-creditos-admin" class="input-control" placeholder="Cant. Ej. 100" min="1">
-                <button class="btn btn-primary" id="btn-add-creditos-admin">Añadir</button>
+            <h4 style="font-size: 13px; font-weight: 700; margin-bottom: 12px; color: var(--azul);">⏱️ Control de Licencia y Caducidad</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+              <div class="form-group">
+                <label>Asignar Nuevo Plan Completo</label>
+                <div class="form-row">
+                  <select id="select-plan-admin" class="input-control"></select>
+                  <button class="btn btn-primary" id="btn-activar-plan-admin">Activar</button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Forzar Fecha de Vencimiento Manual</label>
+                <div class="form-row">
+                  <input type="date" id="input-fecha-manual" class="input-control">
+                  <button class="btn btn-secondary" id="btn-forzar-fecha" onclick="forzarFechaCaducidad()">Forzar Fecha</button>
+                </div>
               </div>
             </div>
-            <div class="form-group">
-              <label>Establecer Saldo de Créditos Exacto (Escribe 0 para vaciar)</label>
-              <div class="form-row">
-                <input type="number" id="input-creditos-exactos" class="input-control" placeholder="Ej. 0 o 50">
-                <button class="btn btn-danger" onclick="fijarCreditosExactos()">Fijar Saldo</button>
-              </div>
+            
+            <div style="display: flex; gap: 12px; margin-top: 10px;">
+              <button class="btn btn-danger" style="flex: 1; justify-content: center;" onclick="anularSuscripcionTotal()">🚫 Anular e Inactivar Suscripción</button>
+              <button class="btn btn-secondary" style="border-color: var(--rojo); color: var(--rojo);" onclick="vaciarCreditosDirecto()">🧹 Vaciar Créditos a 0</button>
             </div>
           </div>
 
@@ -182,7 +164,6 @@
     </div>
 
     <div class="seccion-doble">
-      <!-- REGLAS DE DESCUENTO -->
       <div class="card">
         <h2>Reglas de Descuento de Créditos</h2>
         <div class="form-group">
@@ -201,7 +182,6 @@
         </div>
       </div>
 
-      <!-- CREACIÓN DE NUEVAS CUENTAS -->
       <div class="card">
         <h2>Creación de Cuentas de Trabajo</h2>
         <div class="form-row">
@@ -231,7 +211,6 @@
     </div>
 
     <div class="seccion-doble">
-      <!-- CATALOGO DE PLANES COMERCIALES -->
       <div class="card">
         <h2>Estructura de Planes Comerciales</h2>
         <div class="form-row" style="margin-bottom: 12px;">
@@ -252,7 +231,6 @@
         </div>
       </div>
 
-      <!-- CONTROL OPERATIVO DE USUARIOS -->
       <div class="card">
         <h2>Control Operativo de Usuarios (Bloqueo Total)</h2>
         <div class="table-container" style="max-height: 320px; overflow-y: auto;">
@@ -383,13 +361,11 @@
 
     clienteSeleccionado = cl;
     
-    // MEJORA: Consulta directa a la vista filtrando por la columna 'email'
     const { data: vistaCliente } = await supabase.from('vista_acceso_cliente')
       .select('tiene_suscripcion_activa, suscripcion_vence_en, creditos_disponibles')
       .eq('email', email)
       .maybeSingle();
 
-    // Sincronización de variables seguras desde la vista
     const tieneSubActiva = vistaCliente?.tiene_suscripcion_activa || false;
     const fechaVence = vistaCliente?.suscripcion_vence_en;
     const creditosActuales = vistaCliente?.creditos_disponibles || 0;
@@ -409,15 +385,23 @@
   }
 
   // --- CONTROLES ADMINISTRATIVOS SUPREMOS ---
-  
-  window.fijarCreditosExactos = async function() {
-    if (!clienteSeleccionado) return;
-    const cant = parseInt(document.getElementById('input-creditos-exactos').value, 10);
-    if (isNaN(cant) || cant < 0) return msg('error', 'Pon un número de créditos válido.');
 
-    const { error } = await supabase.rpc('admin_ajustar_creditos', { p_cliente_id: clienteSeleccionado.id, p_nuevos_creditos: cant });
-    if (error) msg('error', error.message);
-    else { msg('exito', 'Saldo de créditos reajustado.'); consultarDetallesClienteAdmin(clienteSeleccionado.email); }
+  // CORRECCIÓN DEFINITIVA: Modifica la tabla 'credits' y la columna 'creditos' observada en tu BD
+  window.vaciarCreditosDirecto = async function() {
+    if (!clienteSeleccionado) return;
+    if (!confirm(`¿Estás seguro de restablecer por completo a 0 los créditos de ${clienteSeleccionado.email}?`)) return;
+
+    const { error } = await supabase
+      .from('credits')
+      .update({ creditos: 0 }) // Nombre de columna exacto: 'creditos'
+      .eq('user_id', clienteSeleccionado.id);
+
+    if (error) {
+      msg('error', 'Error al modificar la tabla credits: ' + error.message);
+    } else {
+      msg('exito', 'El saldo de créditos se ha limpiado y fijado en 0 de manera correcta.');
+      consultarDetallesClienteAdmin(clienteSeleccionado.email);
+    }
   }
 
   window.forzarFechaCaducidad = async function() {
@@ -445,14 +429,6 @@
     const { error } = await supabase.rpc('asignar_plan_a_cliente', { p_cliente_id: clienteSeleccionado.id, p_plan_id: planId });
     if (error) msg('error', error.message);
     else { msg('exito', '¡Plan activado!'); consultarDetallesClienteAdmin(clienteSeleccionado.email); }
-  }
-
-  async function ejecutarRecargaCreditosAdmin() {
-    if (!clienteSeleccionado) return;
-    const cant = parseInt(document.getElementById('input-creditos-admin').value, 10);
-    const { error } = await supabase.rpc('recargar_creditos_cliente', { p_cliente_id: clienteSeleccionado.id, p_cantidad: cant });
-    if (error) msg('error', error.message);
-    else { msg('exito', 'Créditos agregados.'); consultarDetallesClienteAdmin(clienteSeleccionado.email); }
   }
 
   window.alternarEstadoUsuario = async function(id, estadoActual) {
@@ -512,7 +488,6 @@
     document.getElementById('btn-crear-plan').addEventListener('click', crearNuevoPlan);
     document.getElementById('btn-buscar-cliente').addEventListener('click', buscarClienteDirectoAdmin);
     document.getElementById('btn-activar-plan-admin').addEventListener('click', ejecutarAsignarPlanAdmin);
-    document.getElementById('btn-add-creditos-admin').addEventListener('click', ejecutarRecargaCreditosAdmin);
   }
 </script>
 </body>
