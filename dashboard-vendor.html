@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="frame-ancestors 'none'">
-  <title>Panel de Ventas</title>
+  <title>Panel de Ventas — TuBingo Pro</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -57,7 +57,6 @@
     }
     .input-control:focus { border-color: var(--azul); }
     
-    /* Contenedor de Sugerencias de búsqueda predictiva */
     .sugerencias-lista {
       position: absolute; top: 100%; left: 0; right: 0;
       background: #fff; border: 1.5px solid var(--gris-200);
@@ -119,17 +118,22 @@
       <div id="box-resultado" class="info-busqueda"></div>
     </div>
 
+    <!-- CARD ACCIONES GENERALES COMPLETAMENTE VISIBLE -->
     <div class="card" id="card-acciones" style="display: none;">
       <h3>Asignar Licencia o Créditos</h3>
       
+      <!-- APARTADO VENTA DE PLANES COMERCIALES -->
       <div class="form-group" style="border-top: 1px solid var(--gris-200); padding-top: 16px;">
-        <label for="select-plan">Seleccionar Plan de Activación</label>
+        <label for="select-plan">Seleccionar Plan de Activación (Días de Licencia)</label>
         <div class="form-inline">
-          <select id="select-plan" class="input-control"></select>
-          <button class="btn" onclick="asignarPlan()">Activar Plan</button>
+          <select id="select-plan" class="input-control">
+            <option value="">Cargando catálogo comercial...</option>
+          </select>
+          <button class="btn" id="btn-activar-plan" onclick="asignarPlan()">Activar Plan</button>
         </div>
       </div>
 
+      <!-- APARTADO ADICIONAL DE CRÉDITOS SUELTOS -->
       <div class="form-group" style="border-top: 1px solid var(--gris-200); padding-top: 16px; margin-bottom: 0;">
         <label for="input-creditos">Cantidad de Créditos a Recargar</label>
         <div class="form-inline">
@@ -161,17 +165,36 @@
   })()
 
   async function cargarPlanes() {
+    const select = document.getElementById('select-plan')
     try {
-      const { data, error } = await supabase.from('plans').select('*').eq('activo', true).order('dias_duracion', { ascending: true })
+      // Cargamos todos los planes activos directo desde la base de datos
+      const { data, error } = await supabase
+        .from('plans')
+        .select('*')
+        .eq('activo', true)
+        .order('dias_duracion', { ascending: true })
+
       if (error) throw error
-      const select = document.getElementById('select-plan')
-      select.innerHTML = data.map(p => `<option value="${p.id}">${p.nombre} ($${p.precio})</option>`).join('')
+
+      if (!data || data.length === 0) {
+        select.innerHTML = `<option value="">⚠️ No hay planes creados en el sistema</option>`;
+        document.getElementById('btn-activar-plan').disabled = true;
+        return;
+      }
+
+      // Seteamos la lista correctamente para que el vendedor pueda elegir
+      select.innerHTML = data.map(p => `
+        <option value="${p.id}">${p.nombre} — ${p.dias_duracion} Días ($${p.precio})</option>
+      `).join('')
+      document.getElementById('btn-activar-plan').disabled = false;
+
     } catch (e) {
-      mostrarError('No se pudieron cargar los planes de suscripción.')
+      console.error(e);
+      select.innerHTML = `<option value="">Error al mapear catálogo comercial</option>`;
+      mostrarError('No se pudieron sincronizar los planes comerciales desde Supabase.')
     }
   }
 
-  // BUSCADOR PREDICTIVO SEPARADO DE LA CONSULTA AUTOMÁTICA
   function setupBuscadorPredictivo() {
     inputBuscar.addEventListener('input', async () => {
       const texto = inputBuscar.value.trim().toLowerCase();
@@ -182,7 +205,6 @@
       }
 
       try {
-        // Buscar coincidencias parciales para la lista desplegable
         const { data, error } = await supabase
           .from('vista_acceso_cliente')
           .select('id, email, nombre')
@@ -203,13 +225,12 @@
         
         listaSugerencias.style.display = 'block';
 
-        // Listeners para los clics en los elementos del menú desplegable
         document.querySelectorAll('.sugerencia-item').forEach(item => {
           item.addEventListener('click', () => {
             const emailElegido = item.getAttribute('data-email');
             inputBuscar.value = emailElegido;
-            listaSugerencias.style.display = 'none'; // Cerrar inmediatamente
-            consultarDetallesCliente(emailElegido);  // Ejecutar consulta limpia
+            listaSugerencias.style.display = 'none';
+            consultarDetallesCliente(emailElegido);
           });
         });
 
@@ -218,7 +239,6 @@
       }
     });
 
-    // Cerrar sugerencias si se hace clic en cualquier otra parte de la pantalla
     document.addEventListener('click', (e) => {
       if (e.target !== inputBuscar && e.target !== listaSugerencias) {
         listaSugerencias.style.display = 'none';
@@ -229,7 +249,7 @@
   window.buscarClienteDirecto = function() {
     const email = inputBuscar.value.trim();
     if (!email) return mostrarError('Introduce un correo electrónico válido.');
-    listaSugerencias.style.display = 'none'; // Ocultar sugerencias al buscar de forma directa
+    listaSugerencias.style.display = 'none';
     consultarDetallesCliente(email);
   }
 
@@ -262,10 +282,10 @@
       }
 
       box.innerHTML = `
-        <strong>Nombre:</strong> ${cl.nombre}<br>
+        <strong>Nombre del Cliente:</strong> ${cl.nombre}<br>
         <strong>Estado Cuenta:</strong> ${cl.activo ? '🟢 Activa' : '🔴 Inactiva'}<br>
-        <strong>Créditos Actuales:</strong> ${saldoCreditos} créditos<br>
-        <strong>Suscripción:</strong> ${estadoSuscripcion}
+        <strong>Créditos en Monedero:</strong> ${saldoCreditos} créditos<br>
+        <strong>Licencia de Tiempo:</strong> ${estadoSuscripcion}
       `
       box.style.display = 'block'
       acciones.style.display = 'block'
@@ -280,17 +300,20 @@
     limpiarMensajes()
     const planId = document.getElementById('select-plan').value
 
+    if (!planId) return mostrarError('Por favor, selecciona un plan comercial de la lista.');
+
     try {
+      // Llamada directa al backend RPC de Supabase para fijar el tiempo de licencia comercial
       const { error } = await supabase.rpc('asignar_plan_a_cliente', {
         p_cliente_id: clienteSeleccionado.id,
         p_plan_id: planId
       })
       if (error) throw error
 
-      mostrarExito('Suscripción asignada y activada correctamente.')
+      mostrarExito('¡Excelente! Plan comercial vendido, asignado y activado correctamente.')
       consultarDetallesCliente(clienteSeleccionado.email)
     } catch (e) {
-      mostrarError(e.message || 'Error al intentar procesar la suscripción.')
+      mostrarError(e.message || 'Error al intentar procesar la activación del plan.')
     }
   }
 
